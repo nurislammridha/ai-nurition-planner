@@ -1,0 +1,123 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;600;700&display=swap');
+
+body {
+    font-family: 'Figtree', sans-serif;
+    background: #FFF url('bg.jpg') no-repeat center center !important;
+    background-size: cover;
+}
+/* body {
+    background: #f8f9fa;
+} */
+
+.container {
+    max-width: 1000px !important;
+    margin: auto;
+}
+
+.page-title {
+    text-align: center;
+    padding: 20px 0;
+    color: #ffffff;
+    background: linear-gradient(135deg, #007bff, #6610f2);
+    border-radius: 8px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.smart-table {
+    /* background: #ffffff; */
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.table th {
+    background: #007bff;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+.btn-sm {
+    padding: 6px 10px;
+}
+
+.footer {
+    margin-top: 30px;
+    padding: 15px;
+    background: #343a40;
+    color: white;
+    text-align: center;
+    border-radius: 8px;
+}
+
+.footer a {
+    color: #17a2b8;
+    text-decoration: none;
+}
+
+.footer a:hover {
+    text-decoration: underline;
+}
+
+.details-container {
+    max-width: 700px;
+    margin: auto;
+    /* background: #ffffff; */
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+    font-weight: bold;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.info-item i {
+    margin-right: 10px;
+    color: #007bff;
+}
+
+.badge {
+    font-size: 14px;
+    margin: 2px;
+}
+
+.form-container {
+    /* background: #ffffff; */
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.btn-group .btn {
+    width: 33%;
+}
+.relative {
+    padding-right: 30px; /* Adjust based on the width of your icon */
+}
+.bg-primary-800 {
+    --tw-bg-opacity: 1;
+    background-color: rgb(55 48 163 / var(--tw-bg-opacity, 1));
+}
+.text-primary-500 {
+    --tw-text-opacity: 1;
+    color: rgb(99 102 241 / var(--tw-text-opacity, 1));
+}
+.text-base {
+   color: #16A34A;
+}
+.bg-base {
+    background-color: #16A34A;
+}
+.bg-danger {
+    background-color: #DB2777;
+}
