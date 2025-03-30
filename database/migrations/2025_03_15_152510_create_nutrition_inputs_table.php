@@ -17,6 +17,8 @@ return new class extends Migration
             $table->float('height');
             $table->float('weight');
             $table->string('gender');
+            $table->string('name');
+            $table->string('plan_duration');
             $table->string('goal');
             $table->string('diet_type');
             $table->integer('meals_per_day');

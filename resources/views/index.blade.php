@@ -9,6 +9,9 @@
         </svg>
         Create Plan
     </a>
+    @if (session('success'))
+<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-md mt-2">{{ session('success') }}</div>
+@endif
 </div>
 @if (session('success'))
 <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-md mt-2">{{ session('success') }}</div>
@@ -18,10 +21,23 @@
     <input type="text" id="searchInput" placeholder="🔍 Search by name..." class="w-1/2 p-2 border rounded"
         onkeyup="filterTable()">
     <select id="planFilter" class="w-1/2 p-2 border rounded" onchange="filterTable()">
-        <option value="">All Diet Plans</option>
-        <option value="Low-Carb">Low-Carb</option>
+        <option value="">Select a diet type</option>
+        <option value="Carnivore">Carnivore</option>
+        <option value="DASH">DASH</option>
+        <option value="Dairy-Free">Dairy-Free</option>
+        <option value="Gluten-Free">Gluten-Free</option>
+        <option value="Halal">Halal</option>
+        <option value="High-Protein">High-Protein</option>
         <option value="Keto">Keto</option>
-        <option value="Diabetic Diet">Diabetic Diet</option>
+        <option value="Kosher">Kosher</option>
+        <option value="Low-Carb">Low-Carb</option>
+        <option value="Mediterranean">Mediterranean</option>
+        <option value="OMAD">OMAD</option>
+        <option value="Paleo">Paleo</option>
+        <option value="Pescatarian">Pescatarian</option>
+        <option value="Plant-Based">Plant-Based</option>
+        <option value="Vegan">Vegan</option>
+        <option value="Vegetarian">Vegetarian</option>
     </select>
 </div>
 
@@ -86,7 +102,7 @@
         </tbody>
     </table>
 </div>
-  @endsection
+@endsection
    
     
    

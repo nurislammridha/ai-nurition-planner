@@ -10,11 +10,13 @@ class NutritionInput extends Model
     use HasFactory;
 
     protected $fillable = [
+        'name',
         'age',
         'height',
         'weight',
         'gender',
         'goal',
+        'plan_duration',
         'meals_per_day',
         'diet_type',
         'health_conditions',

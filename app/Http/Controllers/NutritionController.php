@@ -29,9 +29,11 @@ class NutritionController extends Controller
             'height' => 'required|numeric',
             'weight' => 'required|numeric',
             'gender' => 'required|string',
+            'name' => 'required|string',
             'goal' => 'required|string',
             'diet_type' => 'required|string',
             'meals_per_day' => 'required|string',
+            'plan_duration' => 'required|string',
         ]);
 
 
@@ -43,7 +45,7 @@ class NutritionController extends Controller
             'model' => 'gpt-3.5-turbo',
             'messages' => [
                 ['role' => 'system', 'content' => 'You are a nutritionist providing diet plans based on user input.'],
-                ['role' => 'user', 'content' => "I am {$request->age} years old, {$request->height} cm tall, weighing {$request->weight} kg. My goal is {$request->goal}. I have health conditions: " . json_encode($request->health_conditions) . " and allergies: " . json_encode($request->allergies) . ". Suggest a personalized diet plan."]
+                ['role' => 'user', 'content' => "I am {$request->age} years old, {$request->height} cm tall, weighing {$request->weight} kg. My goal is {$request->goal}. I have health conditions: " . json_encode($request->health_conditions) . " and allergies: " . json_encode($request->allergies) . ". I take {$request->meals_per_day} times meals per day. Suggest a personalized diet plan for {$request->plan_duration} days."]
             ],
             'temperature' => 0.7
         ]);
@@ -58,11 +60,13 @@ class NutritionController extends Controller
         }
         //save to db
         $nutrition = NutritionInput::create([
+            'name' => $request->name,
             'age' => $request->age,
             'height' => $request->height,
             'weight' => $request->weight,
             'gender' => $request->gender,
             'goal' => $request->goal,
+            'plan_duration' => $request->plan_duration,
             'meals_per_day' => $request->meals_per_day,
             'diet_type' => $request->diet_type,
             'health_conditions' => $request->health_conditions,
@@ -90,9 +94,11 @@ class NutritionController extends Controller
             'height' => 'required|numeric',
             'weight' => 'required|numeric',
             'gender' => 'required|string',
+            'name' => 'required|string',
             'goal' => 'required|string',
             'diet_type' => 'required|string',
             'meals_per_day' => 'required|string',
+            'plan_duration' => 'required|string',
         ]);
 
 
@@ -104,7 +110,7 @@ class NutritionController extends Controller
             'model' => 'gpt-3.5-turbo',
             'messages' => [
                 ['role' => 'system', 'content' => 'You are a nutritionist providing diet plans based on user input.'],
-                ['role' => 'user', 'content' => "I am {$request->age} years old, {$request->height} cm tall, weighing {$request->weight} kg. My goal is {$request->goal}. I have health conditions: " . json_encode($request->health_conditions) . " and allergies: " . json_encode($request->allergies) . ". Suggest a personalized diet plan."]
+                ['role' => 'user', 'content' => "I am {$request->age} years old, {$request->height} cm tall, weighing {$request->weight} kg. My goal is {$request->goal}. I have health conditions: " . json_encode($request->health_conditions) . " and allergies: " . json_encode($request->allergies) . ". I take {$request->meals_per_day} times meals per day. Suggest a personalized diet plan for {$request->plan_duration} days."]
             ],
             'temperature' => 0.7
         ]);

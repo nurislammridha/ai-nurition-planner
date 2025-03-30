@@ -23,7 +23,7 @@
             }
         });
     }
-
+//I worked on romygo project, in app calling feature=>it's running, ai nutrition planner
     function sortTable(colIndex) {
         let table = document.querySelector("table");
         let rows = Array.from(table.rows).slice(1);
@@ -45,6 +45,11 @@
         }
     }
 </script>
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    <script>
+        new Choices('#healthConditions', { removeItemButton: true });
+        new Choices('#allergies', { removeItemButton: true });
+    </script>
 </body>
 
 </html>
