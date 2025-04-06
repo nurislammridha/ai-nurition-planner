@@ -54,42 +54,6 @@
             </div>
         </div>
 
-        <!-- Nutrition Plan -->
-        {{-- <div class="mb-4">
-            <p class="font-semibold text-lg">Personalized Nutrition Plan</p>
-            <p><strong>Based on your input, here is a personalized diet plan to help you maintain your health,
-                    manage your diabetes and high cholesterol, and avoid your food allergies:</strong></p>
-            <h6 class="text-center bg-blue-100 text-blue-800 py-2 mt-4 mb-2">Day 1</h6>
-            <ul class="space-y-2">
-                <li class="bg-gray-100 p-2 rounded"><strong>🍽️ Breakfast:</strong> 1 cup of oatmeal topped with
-                    berries and a sprinkle of cinnamon, 1 medium apple, 1 cup of green tea.</li>
-                <li class="bg-gray-100 p-2 rounded"><strong>🥕 Mid-Morning Snack:</strong> Carrot sticks with
-                    hummus.</li>
-                <li class="bg-gray-100 p-2 rounded"><strong>🥗 Lunch:</strong> Grilled chicken salad with mixed
-                    vegetables and vinaigrette dressing, 1 small whole grain roll.</li>
-                <li class="bg-gray-100 p-2 rounded"><strong>🍓 Afternoon Snack:</strong> Greek yogurt with sliced
-                    strawberries.</li>
-                <li class="bg-gray-100 p-2 rounded"><strong>🐟 Dinner:</strong> Baked salmon with steamed broccoli
-                    and quinoa, mixed green salad with lemon vinaigrette.</li>
-                <li class="bg-gray-100 p-2 rounded"><strong>🥒 Evening Snack:</strong> Sliced cucumber with
-                    guacamole.</li>
-            </ul>
-            <h6 class="text-center bg-blue-100 text-blue-800 py-2 mt-4 mb-2">Day 2</h6>
-            <ul class="space-y-2">
-                <li class="bg-gray-100 p-2 rounded"><strong>🍽️ Breakfast:</strong> 1 cup of oatmeal topped with
-                    berries and a sprinkle of cinnamon, 1 medium apple, 1 cup of green tea.</li>
-                <li class="bg-gray-100 p-2 rounded"><strong>🥕 Mid-Morning Snack:</strong> Carrot sticks with
-                    hummus.</li>
-                <li class="bg-gray-100 p-2 rounded"><strong>🥗 Lunch:</strong> Grilled chicken salad with mixed
-                    vegetables and vinaigrette dressing, 1 small whole grain roll.</li>
-                <li class="bg-gray-100 p-2 rounded"><strong>🍓 Afternoon Snack:</strong> Greek yogurt with sliced
-                    strawberries.</li>
-                <li class="bg-gray-100 p-2 rounded"><strong>🐟 Dinner:</strong> Baked salmon with steamed broccoli
-                    and quinoa, mixed green salad with lemon vinaigrette.</li>
-                <li class="bg-gray-100 p-2 rounded"><strong>🥒 Evening Snack:</strong> Sliced cucumber with
-                    guacamole.</li>
-            </ul>
-        </div> --}}
 <!-- Nutrition Plan -->
 <div class="mb-4">
     <p class="font-semibold text-lg">Personalized Nutrition Plan</p>
@@ -158,46 +122,3 @@
 </div>
 @endsection
 
-{{-- <div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Nutrition Plan Details</h5>
-                </div>
-                <div class="card-body">
-                    <p><strong>Age:</strong> {{ $nutrition->age }}</p>
-                    <p><strong>Height:</strong> {{ $nutrition->height }} cm</p>
-                    <p><strong>Weight:</strong> {{ $nutrition->weight }} kg</p>
-                    <p><strong>Gender:</strong> {{ ucfirst($nutrition->gender) }}</p>
-                    <p><strong>Goal:</strong> {{ $nutrition->goal }}</p>
-                    <p><strong>Diet Type:</strong> {{ $nutrition->diet_type }}</p>
-                    <p><strong>Meals Per Day:</strong> {{ $nutrition->meals_per_day }}</p>
-
-                  
-                    <p><strong>Health Conditions:</strong></p>
-                    <ul>
-                        @foreach($nutrition->health_conditions as $condition)
-                            <li>{{ $condition }}</li>
-                        @endforeach
-                    </ul>
-                    <p><strong>Allergies:</strong> 
-                        <ul>
-                            @foreach($nutrition->allergies as $allergy)
-                                <li>{{ $allergy }}</li>
-                            @endforeach
-                        </ul>
-                    </p>
-
-                    <p><strong>Nutrition Plan:</strong></p>
-                    <div class="alert alert-secondary">
-                        {{ $nutrition->nutrition_plan }}
-                    </div>
-                </div>
-                <div class="card-footer text-end">
-                    <a href="{{ route('nutrition.index') }}" class="btn btn-secondary btn-sm">Back</a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div> --}}

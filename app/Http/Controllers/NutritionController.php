@@ -81,10 +81,6 @@ class NutritionController extends Controller
      */
 
 
-    // public function show(NutritionInput $nutrition)
-    // {
-    //     return view('show', compact('nutrition'));
-    // }
     public function show(NutritionInput $nutrition)
     {
         $parsed = $this->parseNutritionPlan($nutrition->nutrition_plan);
