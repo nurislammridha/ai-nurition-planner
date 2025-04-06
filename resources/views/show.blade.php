@@ -55,7 +55,7 @@
         </div>
 
         <!-- Nutrition Plan -->
-        <div class="mb-4">
+        {{-- <div class="mb-4">
             <p class="font-semibold text-lg">Personalized Nutrition Plan</p>
             <p><strong>Based on your input, here is a personalized diet plan to help you maintain your health,
                     manage your diabetes and high cholesterol, and avoid your food allergies:</strong></p>
@@ -89,15 +89,33 @@
                 <li class="bg-gray-100 p-2 rounded"><strong>🥒 Evening Snack:</strong> Sliced cucumber with
                     guacamole.</li>
             </ul>
-        </div>
+        </div> --}}
+<!-- Nutrition Plan -->
+<div class="mb-4">
+    <p class="font-semibold text-lg">Personalized Nutrition Plan</p>
+    <p><strong>Based on your input, here is a personalized diet plan:</strong></p>
+
+    @foreach($nutritionPlan as $day => $meals)
+        <h6 class="text-center bg-blue-100 text-blue-800 py-2 mt-4 mb-2">{{ $day }}</h6>
+        <ul class="space-y-2">
+            @foreach($meals as $mealType => $items)
+                <li class="bg-gray-100 p-2 rounded">
+                    <strong>{{ getMealEmoji($mealType) }} {{ $mealType }}</strong>
+                    <ul class="list-disc pl-6">
+                        @foreach($items as $item)
+                            <li>{{ $item }}</li>
+                        @endforeach
+                    </ul>
+                </li>
+            @endforeach
+        </ul>
+    @endforeach
+</div>
 
         <!-- Health Tips -->
         <div class="bg-blue-100 p-4 rounded text-blue-800">
-            <strong>💡 Health Tips:</strong> Remember to drink plenty of water throughout the day and try to
-            incorporate regular physical activity into your routine. It's also important to monitor your blood sugar
-            levels regularly. Feel free to adjust portion sizes and food choices based on your preferences and
-            nutritional needs.
-        </div>
+            <strong>💡 Health Tips:</strong> {{ $healthTips }}
+        </div> 
 
         <!-- Edit & Print Buttons -->
         <div class="text-center mt-3">

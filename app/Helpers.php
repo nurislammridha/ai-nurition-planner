@@ -11,3 +11,13 @@ if (!function_exists('goalColor')) {
         };
     }
 }
+function getMealEmoji($type)
+{
+    return match (strtolower($type)) {
+        'breakfast:' => '🍽️',
+        'lunch:' => '🥗',
+        'dinner:' => '🐟',
+        'snack:' => '🍓',
+        default => '🍴'
+    };
+}

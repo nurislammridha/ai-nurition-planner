@@ -79,10 +79,79 @@ class NutritionController extends Controller
     /**
      * Display the specified resource.
      */
+
+
+    // public function show(NutritionInput $nutrition)
+    // {
+    //     return view('show', compact('nutrition'));
+    // }
     public function show(NutritionInput $nutrition)
     {
-        return view('show', compact('nutrition'));
+        $parsed = $this->parseNutritionPlan($nutrition->nutrition_plan);
+
+        return view('show', [
+            'nutrition' => $nutrition,
+            'nutritionPlan' => $parsed['plan'],
+            'healthTips' => $parsed['tips']
+        ]);
     }
+
+    private function parseNutritionPlan($rawText)
+    {
+        $sections = preg_split('/\*\*Day (\d+)-(\d+):\*\*/', $rawText, -1, PREG_SPLIT_DELIM_CAPTURE);
+
+        $parsedPlan = [];
+        $tips = '';
+        $inTips = false;
+        for ($i = 1; $i < count($sections); $i += 3) {
+            $startDay = $sections[$i];
+            $endDay = $sections[$i + 1];
+            $content = $sections[$i + 2];
+
+            preg_match_all('/\*\*(.*?)\*\*\s*- ([^-]*)/', $content, $matches, PREG_SET_ORDER);
+
+            $meals = [];
+            foreach ($matches as $match) {
+                $mealType = trim($match[1]);
+                $mealDetails = trim($match[2]);
+                $meals[$mealType][] = $mealDetails;
+            }
+
+            for ($d = $startDay; $d <= $endDay; $d++) {
+                $parsedPlan["Day $d"] = $meals;
+            }
+        }
+
+        // Extract the tip text after the last meal block
+        // $lastDayPattern = '/\*\*Day \d+-\d+:\*\*.*?\*\*Dinner:\*\*.*?(?:\n|$)/s';
+        // if (preg_match($lastDayPattern, $rawText, $match)) {
+        //     $tips = trim(str_replace($match[0], '', $rawText));
+        // }
+        $lines = preg_split("/\r\n|\n|\r/", $rawText);
+        foreach ($lines as $line) {
+            $line = trim($line);
+
+            // If we've reached the tips section
+            if (stripos($line, 'remember to') !== false && !$inTips) {
+                $inTips = true;
+                $tips .= $line . ' ';
+                continue;
+            }
+
+            if ($inTips) {
+                $tips .= $line . ' ';
+                continue;
+            }
+        }
+
+        return [
+            'plan' => $parsedPlan,
+            'tips' => $tips
+        ];
+    }
+
+
+
     public function edit(NutritionInput $nutrition)
     {
         return view('edit', compact('nutrition'));
