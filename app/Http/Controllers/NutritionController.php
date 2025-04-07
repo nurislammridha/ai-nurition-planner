@@ -84,7 +84,7 @@ class NutritionController extends Controller
     public function show(NutritionInput $nutrition)
     {
         $parsed = $this->parseNutritionPlan($nutrition->nutrition_plan);
-
+        // @dd($parsed['plan']);
         return view('show', [
             'nutrition' => $nutrition,
             'nutritionPlan' => $parsed['plan'],
@@ -94,7 +94,8 @@ class NutritionController extends Controller
 
     private function parseNutritionPlan($rawText)
     {
-        $sections = preg_split('/\*\*Day (\d+)-(\d+):\*\*/', $rawText, -1, PREG_SPLIT_DELIM_CAPTURE);
+        // $sections = preg_split('/\*\*Day (\d+)-(\d+):\*\*/', $rawText, -1, PREG_SPLIT_DELIM_CAPTURE);
+        $sections = preg_split('/Day (\d+)-(\d+):/', $rawText, -1, PREG_SPLIT_DELIM_CAPTURE);
 
         $parsedPlan = [];
         $tips = '';
@@ -104,7 +105,8 @@ class NutritionController extends Controller
             $endDay = $sections[$i + 1];
             $content = $sections[$i + 2];
 
-            preg_match_all('/\*\*(.*?)\*\*\s*- ([^-]*)/', $content, $matches, PREG_SET_ORDER);
+            // preg_match_all('/\*\*(.*?)\*\*\s*- ([^-]*)/', $content, $matches, PREG_SET_ORDER);
+            preg_match_all('/-\s*(\w+):\s*(.*)/', $content, $matches, PREG_SET_ORDER);
 
             $meals = [];
             foreach ($matches as $match) {

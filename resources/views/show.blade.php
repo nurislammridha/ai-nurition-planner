@@ -80,6 +80,7 @@
         <div class="bg-blue-100 p-4 rounded text-blue-800">
             <strong>💡 Health Tips:</strong> {{ $healthTips }}
         </div> 
+    
 
         <!-- Edit & Print Buttons -->
         <div class="text-center mt-3">
