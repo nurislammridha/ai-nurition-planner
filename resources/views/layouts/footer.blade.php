@@ -1,8 +1,11 @@
-<div class="mt-6">
-    <div class="bg-base text-white text-center p-4">
+<div class="mt-10">
+    <div class="bg-base text-white text-center p-4 text-sm md:text-base">
         <p>&copy; 2025 Nutrition Planner. All Rights Reserved.</p>
-        <p><a href="#">Privacy Policy</a> | <a href="#">Terms &
-                Conditions</a></p>
+        <p>
+            <a class="underline" href="#">Privacy Policy</a> |
+            <a class="underline" href="#">Terms &
+                Conditions</a>
+        </p>
     </div>
 </div>
 

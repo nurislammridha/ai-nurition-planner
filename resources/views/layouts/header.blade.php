@@ -17,8 +17,9 @@
 
 <body class="bg-gray-100 min-h-screen flex flex-col">
 
-    <!-- <div class="container mx-auto mt-6"> -->
-    <div class="sticky top-0 z-10 p-2 shadow backdrop-blur-lg lg:px-8">
-        <h2 class="text-center text-primary-500 text-3xl font-bold py-4 ">
-            Nutrition Planner</h2>
+   <!-- <div class="container mx-auto mt-6"> -->
+    <div class="sticky top-0 z-10 shadow backdrop-blur-lg px-4 py-4 lg:px-8">
+        <h2 class="text-center text-2xl md:text-3xl font-bold text-primary-500">
+            Nutrition Planner
+        </h2>
     </div>

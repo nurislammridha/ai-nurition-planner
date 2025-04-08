@@ -83,8 +83,8 @@
     
 
         <!-- Edit & Print Buttons -->
-        <div class="text-center mt-3">
-            <a href="{{ route('nutrition.edit',$nutrition) }}" class="bg-danger text-white py-2 px-4 rounded hover:bg-yellow-600">
+        <div class="mt-4 px-4 flex flex-col sm:flex-row sm:justify-center gap-3 text-center">
+            <a href="{{ route('nutrition.edit',$nutrition) }}"  class="bg-danger text-white py-2 px-4 rounded hover:bg-yellow-600 flex items-center justify-center sm:w-auto w-full">
                 <!-- Heroicon Edit Icon -->
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 inline" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
@@ -94,7 +94,7 @@
                 Edit Plan
             </a>
             <a href="" onclick="window.print()"
-                class="bg-base text-white py-2 px-4 mx-2 rounded hover:bg-green-800">
+            class="bg-base text-white py-2 px-4 rounded hover:bg-green-800 flex items-center justify-center sm:w-auto w-full">
                 <!-- Heroicon Print Icon -->
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 inline" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
@@ -106,8 +106,8 @@
         </div>
 
         <!-- Back Button -->
-        <div class="text-center mt-5">
-            <a href="{{ route('nutrition.index') }}" class="bg-primary-800 text-white py-2 px-4 rounded hover:bg-blue-600">
+        <div class="mt-5 px-4 text-center">
+            <a href="{{ route('nutrition.index') }}"  class="bg-primary-800 text-white py-2 px-4 rounded hover:bg-blue-600 flex items-center justify-center w-full sm:w-auto w-full max-w-xs mx-auto">
                 <!-- Heroicon Arrow Left Icon -->
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 inline" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
