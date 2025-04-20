@@ -86,7 +86,7 @@
                                 </svg>
                     </a>
 
-                    <!-- Delete Icon -->
+                    <!-- Delete Icon t -->
                     <form action="{{ route('nutrition.destroy', $post) }}" method="POST" style="display: inline">
                         @csrf
                         @method('DELETE')
