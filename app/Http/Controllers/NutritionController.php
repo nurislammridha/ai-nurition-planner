@@ -6,6 +6,7 @@ use App\Models\NutritionInput;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class NutritionController extends Controller
 {
@@ -214,5 +215,29 @@ class NutritionController extends Controller
     {
         $nutrition->delete();
         return redirect()->route('nutrition.index')->with('success', 'Post deleted successfully');
+    }
+
+    public function exportPdf($id)
+    {
+        $nutrition = NutritionInput::findOrFail($id);
+        $parsed = $this->parseNutritionPlan($nutrition->nutrition_plan);
+        $nutritionPlan = $parsed['plan']; // Adjust according to your data
+        $healthTips =  $parsed['tips']; // Adjust if needed
+
+        $pdf = Pdf::loadView('nutrition.export', compact('nutrition', 'nutritionPlan', 'healthTips'));
+        return $pdf->download('nutrition_plan.pdf');
+    }
+    public function exportDoc($id)
+    {
+        $nutrition = NutritionInput::findOrFail($id);
+        $parsed = $this->parseNutritionPlan($nutrition->nutrition_plan);
+        $nutritionPlan = $parsed['plan']; // Adjust according to your data
+        $healthTips =  $parsed['tips']; // Adjust if needed
+
+        $html = view('nutrition.export', compact('nutrition', 'nutritionPlan', 'healthTips'))->render();
+
+        return response($html)
+            ->header('Content-Type', 'application/msword')
+            ->header('Content-Disposition', 'attachment; filename="nutrition_plan.doc"');
     }
 }

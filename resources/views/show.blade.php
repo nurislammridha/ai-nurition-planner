@@ -94,7 +94,7 @@
                 Edit Plan
             </a>
             <a href="" onclick="window.print()"
-            class="bg-base text-white py-2 px-4 rounded hover:bg-green-800 flex items-center justify-center sm:w-auto w-full">
+            class="bg-primary-800 text-white py-2 px-4 rounded hover:bg-green-800 flex items-center justify-center sm:w-auto w-full">
                 <!-- Heroicon Print Icon -->
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 inline" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
@@ -102,6 +102,16 @@
                         d="M19 8h-4V4H9v4H5a2 2 0 00-2 2v8a2 2 0 002 2h14a2 2 0 002-2V10a2 2 0 00-2-2z" />
                 </svg>
                 Print Plan
+            </a>
+        </div>
+        <!-- Export Buttons -->
+        <div class="mt-4 px-4 flex flex-col sm:flex-row sm:justify-center gap-3 text-center">
+            <a href="{{ route('nutrition.exportPdf', $nutrition->id) }}"   class="bg-danger text-white py-2 px-4 rounded hover:bg-yellow-600 flex items-center justify-center sm:w-auto w-full">
+                <i class="fas fa-file-pdf mr-2"></i> Export PDF
+            </a>
+            <a href="{{ route('nutrition.exportDoc', $nutrition->id) }}"
+            class="bg-primary-800 text-white py-2 px-4 rounded hover:bg-green-800 flex items-center justify-center sm:w-auto w-full">
+            <i class="fas fa-file-word mr-2"></i> Export DOC
             </a>
         </div>
 
@@ -116,9 +126,6 @@
                 Back to Plans
             </a>
         </div>
-
-
-
     </div>
 </div>
 @endsection
