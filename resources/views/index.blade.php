@@ -22,23 +22,10 @@
         <select id="planFilter"
             class="w-full lg:w-1/2 p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
             onchange="filterTable()">
-            <option value="">Select a diet type</option>
-        <option value="Carnivore">Carnivore</option>
-        <option value="DASH">DASH</option>
-        <option value="Dairy-Free">Dairy-Free</option>
-        <option value="Gluten-Free">Gluten-Free</option>
-        <option value="Halal">Halal</option>
-        <option value="High-Protein">High-Protein</option>
-        <option value="Keto">Keto</option>
-        <option value="Kosher">Kosher</option>
-        <option value="Low-Carb">Low-Carb</option>
-        <option value="Mediterranean">Mediterranean</option>
-        <option value="OMAD">OMAD</option>
-        <option value="Paleo">Paleo</option>
-        <option value="Pescatarian">Pescatarian</option>
-        <option value="Plant-Based">Plant-Based</option>
-        <option value="Vegan">Vegan</option>
-        <option value="Vegetarian">Vegetarian</option>
+            <option value="">Select a Goal</option>
+            <option value="Weight Loss">Weight Loss</option>
+            <option value="Muscle Gain">Muscle Gain</option>
+            <option value="Maintain Health">Maintain Health</option>
         </select>
     </div>
 </div>

@@ -121,3 +121,10 @@ body {
 .bg-danger {
     background-color: #DB2777;
 }
+
+.choices__list--multiple .choices__item {
+   
+    background-color:rgb(55 48 163 / var(--tw-bg-opacity, 1)) !important;
+    border: 1px solidrgb(55 48 163 / var(--tw-bg-opacity, 1)) !important;
+ 
+}

@@ -1,5 +1,5 @@
 <div class="mt-10">
-    <div class="bg-base text-white text-center p-4 text-sm md:text-base">
+    <div class="bg-primary-800 text-white text-center p-4 text-sm md:text-base">
         <p>&copy; 2025 Nutrition Planner. All Rights Reserved.</p>
         <p>
             <a class="underline" href="#">Privacy Policy</a> |
@@ -48,6 +48,7 @@
         }
     }
 </script>
+
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
     <script>
         new Choices('#healthConditions', { removeItemButton: true });

@@ -12,7 +12,7 @@
 </head>
 <body>
 
-    <h2>Nutrition Plan Details</h2>
+    <h2>{{ $nutrition->plan_duration }} days plan for {{ $nutrition->name }}</h2>
 
     <div>
         <p class="section-title">Personal Information</p>

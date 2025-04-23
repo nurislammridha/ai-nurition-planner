@@ -43,6 +43,7 @@
                 <select name="plan_duration" class="w-full p-2 border rounded focus:ring focus:ring-blue-300" required>
                     <option value="">Select plan duration</option>
                     <option value="1" {{ $nutrition->plan_duration==='1'?'selected':'' }}>One day</option>
+                    <option value="7" {{ $nutrition->plan_duration==='7'?'selected':'' }}>7 days</option>
                     <option value="15" {{ $nutrition->plan_duration==='15'?'selected':'' }}>15 days</option>
                     <option value="30" {{ $nutrition->plan_duration==='30'?'selected':'' }}>30 days</option>
                 </select>
@@ -124,6 +125,7 @@
                 <label class="block font-medium">Health Conditions</label>
                 <select name="health_conditions[]" id="healthConditions" multiple
                     class="w-full p-2 border rounded focus:ring focus:ring-blue-300">
+                    <option value="None" {{ isSelected('None', $selectedConditions) }}>None</option>
                     <option value="Anemia" {{ isSelected('Anemia', $selectedConditions) }}>Anemia</option>
                     <option value="Asthma" {{ isSelected('Asthma', $selectedConditions) }}>Asthma</option>
                     <option value="Diabetic" {{ isSelected('Diabetic', $selectedConditions) }}>Diabetic</option>
@@ -147,6 +149,7 @@
             <div>
                 <label class="block font-medium">Food Allergies</label>
                 <select name="allergies[]" id="allergies" class="w-full p-2 border rounded focus:ring focus:ring-blue-300" multiple>
+                    <option value="None" {{ isAllergy('None', $selectedAllergy) }}>None</option>
                     <option value="Dairy" {{ isAllergy('Dairy', $selectedAllergy) }}>Dairy</option>
                     <option value="Eggs" {{ isAllergy('Eggs', $selectedAllergy) }}>Eggs</option>
                     <option value="Fish" {{ isAllergy('Fish', $selectedAllergy) }}>Fish</option>
@@ -170,3 +173,26 @@
     </form>
 </div>
 @endsection
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const dietType = document.querySelector('select[name="diet_type"]');
+        const mealsPerDay = document.querySelector('select[name="meals_per_day"]');
+
+        function toggleMealsField() {
+            if (dietType.value === 'OMAD') {
+                mealsPerDay.disabled = true;
+                mealsPerDay.classList.add('bg-gray-200', 'cursor-not-allowed');
+                mealsPerDay.value = ''; // optional: clear selection
+            } else {
+                mealsPerDay.disabled = false;
+                mealsPerDay.classList.remove('bg-gray-200', 'cursor-not-allowed');
+            }
+        }
+
+        // Run initially in case of pre-filled data
+        toggleMealsField();
+
+        // Trigger on change
+        dietType.addEventListener('change', toggleMealsField);
+    });
+</script>

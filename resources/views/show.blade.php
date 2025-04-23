@@ -2,7 +2,7 @@
 @section('content')
 <div class="container mt-5">
     <div class="details-container">
-        <h2 class="text-center text-xl font-semibold">Nutrition Plan Details</h2>
+        <h2 class="text-center text-xl font-semibold">{{ $nutrition->plan_duration }} days plan for {{ $nutrition->name }}</h2>
         <hr class="my-4">
         <!-- Personal Details -->
         <div class="mb-4">

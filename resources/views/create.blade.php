@@ -41,6 +41,7 @@
                 <select name="plan_duration" class="w-full p-2 border rounded focus:ring focus:ring-blue-300" required>
                     <option value="">Select plan duration</option>
                     <option value="1">One day</option>
+                    <option value="7">7 days</option>
                     <option value="15">15 days</option>
                     <option value="30">30 days</option>
                 </select>
@@ -114,6 +115,7 @@
                 <label class="block font-medium">Health Conditions</label>
                 <select name="health_conditions[]" id="healthConditions" multiple
                     class="w-full p-2 border rounded focus:ring focus:ring-blue-300">
+                    <option value="None">None</option>
                     <option value="Anemia">Anemia</option>
                     <option value="Asthma">Asthma</option>
                     <option value="Diabetic">Diabetic</option>
@@ -129,6 +131,7 @@
             <div>
                 <label class="block font-medium">Food Allergies</label>
                 <select name="allergies[]" id="allergies" class="w-full p-2 border rounded focus:ring focus:ring-blue-300" multiple>
+                    <option value="None">None</option>
                     <option value="Dairy">Dairy</option>
                     <option value="Eggs">Eggs</option>
                     <option value="Fish">Fish</option>
@@ -154,3 +157,26 @@
 @endsection
 
 
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const dietType = document.querySelector('select[name="diet_type"]');
+        const mealsPerDay = document.querySelector('select[name="meals_per_day"]');
+
+        function toggleMealsField() {
+            if (dietType.value === 'OMAD') {
+                mealsPerDay.disabled = true;
+                mealsPerDay.classList.add('bg-gray-200', 'cursor-not-allowed');
+                mealsPerDay.value = ''; // optional: clear selection
+            } else {
+                mealsPerDay.disabled = false;
+                mealsPerDay.classList.remove('bg-gray-200', 'cursor-not-allowed');
+            }
+        }
+
+        // Run initially in case of pre-filled data
+        toggleMealsField();
+
+        // Trigger on change
+        dietType.addEventListener('change', toggleMealsField);
+    });
+</script>
