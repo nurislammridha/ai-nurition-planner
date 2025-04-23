@@ -1,0 +1,50 @@
+name: 🚀 Deploy website on push to https://radwana4.sg-host.com
+
+on:
+  push:
+    branches: ["master"]
+
+jobs:
+  web-deploy:
+    name: 🎉 Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+      - name: 🚚 Get latest code
+        uses: actions/checkout@v4
+
+      - name: Copy .env
+        run: php -r "file_exists('.env') || copy('.env.production', '.env');"
+      - name: Install Dependencies
+        run: composer install --no-ansi --no-interaction --no-scripts --prefer-dist --ignore-platform-reqs --optimize-autoloader
+        #  --no-dev commented to avoid error on production server. Need to fix the issue with dev dependencies
+      - name: Update Dependencies
+        run: composer update --no-ansi --no-interaction --no-scripts --prefer-dist --ignore-platform-reqs --optimize-autoloader
+      # - name: Filament Upgrade
+      #   run: php artisan filament:upgrade
+      # - name: Icons cache
+      #   run: php artisan icons:cache
+      - name: Directory Permissions
+        run: chmod -R 777 storage bootstrap/cache
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: 🔨 Build Project for Production
+        run: |
+          npm install
+          npm run build
+
+      - name: 📂 Sync files
+        uses: SamKirkland/FTP-Deploy-Action@4.3.2
+        with:
+          server: ftp.radwana4.sg-host.com
+          username: nimridha@radwana4.sg-host.com
+          password: "$rKr1#,4@@*N"
+          port: 21
