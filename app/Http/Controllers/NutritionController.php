@@ -64,7 +64,11 @@ class NutritionController extends Controller
                         "Diet Type: {$request->diet_type}\n" .
                         "Meals per day: {$request->meals_per_day}\n" .
                         "Plan duration: {$request->plan_duration} days\n\n" .
-                        "⚠️ Again, double-check every meal to ensure it is 100% free from all allergens. If any meal is unsafe, it must be reworked. This is a health-critical instruction. Ensure plan duration is for {$request->plan_duration} days"
+                        "⚠️ IMPORTANT: You must generate a complete, unique meal plan for exactly {$request->plan_duration} days. Do not repeat or reuse any days or meals. Do not say 'repeat the above for the remaining days'. The plan must contain individual meals for each day from Day 1 to Day {$request->plan_duration}. This is a strict requirement. If the user requests 15 days, return exactly 15 full days. If 30 days, return 30 days. No summarizing or skipping.\n\n" .
+                        "⚠️ Again, double-check every meal to ensure it is 100% free from all allergens. If any meal is unsafe, it must be reworked. This is a health-critical instruction."
+
+                    // "Plan duration: {$request->plan_duration} days\n\n" .
+                    // "⚠️ Again, double-check every meal to ensure it is 100% free from all allergens. If any meal is unsafe, it must be reworked. This is a health-critical instruction. Ensure plan duration is for {$request->plan_duration} days"
                 ]
             ],
             'temperature' => 0.7
@@ -314,7 +318,11 @@ class NutritionController extends Controller
                         "Diet Type: {$request->diet_type}\n" .
                         "Meals per day: {$request->meals_per_day}\n" .
                         "Plan duration: {$request->plan_duration} days\n\n" .
+                        "⚠️ IMPORTANT: You must generate a complete, unique meal plan for exactly {$request->plan_duration} days. Do not repeat or reuse any days or meals. Do not say 'repeat the above for the remaining days'. The plan must contain individual meals for each day from Day 1 to Day {$request->plan_duration}. This is a strict requirement. If the user requests 15 days, return exactly 15 full days. If 30 days, return 30 days. No summarizing or skipping.\n\n" .
                         "⚠️ Again, double-check every meal to ensure it is 100% free from all allergens. If any meal is unsafe, it must be reworked. This is a health-critical instruction."
+
+                    // "Plan duration: {$request->plan_duration} days\n\n" .
+                    // "⚠️ Again, double-check every meal to ensure it is 100% free from all allergens. If any meal is unsafe, it must be reworked. This is a health-critical instruction. Ensure plan duration is for {$request->plan_duration} days"
                 ]
             ],
             'temperature' => 0.7
@@ -378,22 +386,71 @@ class NutritionController extends Controller
             ->header('Content-Type', 'application/msword')
             ->header('Content-Disposition', 'attachment; filename="nutrition_plan.doc"');
     }
-    public function updateDayText(Request $request, $id)
+    //for editing plain data
+    public function editDay($id, $day)
     {
-        $request->validate([
-            'day' => 'required|string',
-            'newText' => 'required|string',
-        ]);
-
         $nutrition = NutritionInput::findOrFail($id);
+        $parsed = $this->parseNutritionPlan($nutrition->nutrition_plan);
+        $dayKey = "Day $day";
+        // dd($meals);
+        return view('nutrition.edit-day', [
+            'day' => $day,
+            'meals' => $parsed['plan'][$dayKey] ?? [],
+            'nutritionId' => $id
+        ]);
+    }
 
-        $pattern = '/(Day\s*' . preg_quote($request->day, '/') . '\:)([\s\S]*?)(?=\nDay\s*\d+\:|\z)/i';
-        $replacement = "$1\n" . trim($request->newText) . "\n";
-        $updatedText = preg_replace($pattern, $replacement, $nutrition->plain_text);
+    private function rebuildRawText(string $intro, array $plan, string $tips): string
+    {
+        $text = trim($intro) . "\n\n";
 
-        $nutrition->nutrition_plan = $updatedText;
+        foreach ($plan as $day => $meals) {
+            $text .= "$day:\n";
+            foreach ($meals as $mealType => $items) {
+                foreach ($items as $item) {
+                    $text .= "- $mealType: $item\n";
+                }
+            }
+            $text .= "\n";
+        }
+
+        if (!empty($tips)) {
+            $text .= trim($tips);
+        }
+
+        return trim($text);
+    }
+    public function updateDay(Request $request, $id, $day)
+    {
+        $nutrition = NutritionInput::findOrFail($id);
+        $rawText = $nutrition->nutrition_plan;
+
+        $parsed = $this->parseNutritionPlan($rawText);
+        $dayKey = "Day $day";
+
+        // Update only the selected day
+        $updatedMeals = [];
+        foreach ($request->input('meals') as $mealType => $items) {
+            $items = array_filter($items);
+            $updatedMeals[$mealType] = $items;
+        }
+
+        // Replace Day X
+        $parsed['plan'][$dayKey] = $updatedMeals;
+
+        // Extract dynamic intro from raw text
+        $intro = '';
+        if (preg_match('/^(.*?)(?=\nDay\s*1:)/is', $rawText, $introMatch)) {
+            $intro = trim($introMatch[1]);
+        }
+
+        // Rebuild full raw text
+        $newRawText = $this->rebuildRawText($intro, $parsed['plan'], $parsed['tips']);
+
+        $nutrition->nutrition_plan = $newRawText;
+        // dd($newRawText);
         $nutrition->save();
 
-        return redirect()->back()->with('success', 'Day updated successfully!');
+        return redirect()->route('nutrition.show', $nutrition->id)->with('success', "Day $day updated successfully.");
     }
 }
