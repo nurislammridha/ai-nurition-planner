@@ -116,14 +116,20 @@ class NutritionController extends Controller
             'healthTips' => $parsed['tips']
         ]);
     }
+
     private function parseNutritionPlan($rawText)
     {
         $parsedPlan = [];
         $tips = '';
         $inTips = false;
 
-        // Match individual day sections like "Day 1:", "Day 2:", etc.
-        preg_match_all('/(?:\*\*)?Day\s*(\d+)(?:\*\*)?:([\s\S]*?)(?=\n(?:\*\*)?Day\s*\d+(?:\*\*)?:|\z)/i', $rawText, $dayMatches, PREG_SET_ORDER);
+        // Clean the text
+        $rawText = preg_replace('/(\*\*+)(\s*\n)?/', '', $rawText); // Remove stray ** and bold markers
+        $rawText = preg_replace('/---+/', '', $rawText);            // Remove ---
+        $rawText = preg_replace('/\r\n|\r/', "\n", $rawText);        // Normalize newlines
+
+        // Match day blocks
+        preg_match_all('/Day\s*(\d+):([\s\S]*?)(?=Day\s*\d+:|\z)/i', $rawText, $dayMatches, PREG_SET_ORDER);
 
         foreach ($dayMatches as $match) {
             $dayNumber = (int)$match[1];
@@ -131,25 +137,49 @@ class NutritionController extends Controller
 
             $meals = [];
 
-            // Match lines like "Breakfast: ..." OR "- Breakfast: ..."
-            preg_match_all('/(?:-)?\s*(Breakfast|Snack|Lunch|Dinner):\s*(.*)/i', $content, $mealMatches, PREG_SET_ORDER);
+            // Split content into lines
+            $lines = preg_split("/\n/", $content);
 
-            foreach ($mealMatches as $mealMatch) {
-                $mealType = ucfirst(strtolower(trim($mealMatch[1])));
-                $mealDetails = trim($mealMatch[2]);
+            $currentMealType = null;
+            $waitingForMealContent = false;
 
-                $meals[$mealType][] = $mealDetails;
+            foreach ($lines as $line) {
+                $line = trim($line);
+
+                if (empty($line)) {
+                    continue;
+                }
+
+                // Check if this is a meal type header
+                if (preg_match('/^(?:-)?\s*(Breakfast|Mid-Morning Snack|Afternoon Snack|Snack|Lunch|Dinner):\s*(.*)$/i', $line, $mealHeaderMatch)) {
+                    $currentMealType = ucfirst(strtolower(trim($mealHeaderMatch[1])));
+                    $mealContent = trim($mealHeaderMatch[2]);
+
+                    if (!empty($mealContent)) {
+                        // Meal type + content on same line
+                        $meals[$currentMealType][] = $mealContent;
+                        $currentMealType = null;
+                        $waitingForMealContent = false;
+                    } else {
+                        // Meal type only, wait for next line
+                        $waitingForMealContent = true;
+                    }
+                } elseif ($waitingForMealContent && $currentMealType) {
+                    // This line is the food content for the previous meal type
+                    $meals[$currentMealType][] = $line;
+                    $currentMealType = null;
+                    $waitingForMealContent = false;
+                }
             }
 
             $parsedPlan["Day $dayNumber"] = $meals;
         }
 
-        // Extract tips section
-        $lines = preg_split("/\r\n|\n|\r/", $rawText);
+        // Extract Tips
+        $lines = preg_split("/\n/", $rawText);
         foreach ($lines as $line) {
             $line = trim($line);
 
-            // Identify the start of the tips section by common phrases
             if (preg_match('/^(Remember to|Make sure|It\'s important|Repeat|Monitor|Consult|Tips:)/i', $line)) {
                 $inTips = true;
             }
@@ -165,41 +195,43 @@ class NutritionController extends Controller
         ];
     }
 
+
+
     // private function parseNutritionPlan($rawText)
     // {
     //     $parsedPlan = [];
     //     $tips = '';
     //     $inTips = false;
 
-    //     // Match both "Day X:", "Day X-Y:" or "**Day X:**"
-    //     preg_match_all('/(?:\*\*)?Day\s*(\d+)(?:-(\d+))?(?:\*\*)?:([\s\S]*?)(?=\n(?:\*\*)?Day\s*\d+(?:-\d+)?(?:\*\*)?:|\z)/i', $rawText, $dayMatches, PREG_SET_ORDER);
+    //     // Match individual day sections like "Day 1:", "Day 2:", etc.
+    //     preg_match_all('/(?:\*\*)?Day\s*(\d+)(?:\*\*)?:([\s\S]*?)(?=\n(?:\*\*)?Day\s*\d+(?:\*\*)?:|\z)/i', $rawText, $dayMatches, PREG_SET_ORDER);
 
     //     foreach ($dayMatches as $match) {
-    //         $startDay = (int)$match[1];
-    //         $endDay = isset($match[2]) && $match[2] !== '' ? (int)$match[2] : $startDay;
-    //         $content = trim($match[3]);
+    //         $dayNumber = (int)$match[1];
+    //         $content = trim($match[2]);
 
-    //         // Extract meals from the day's content
-    //         preg_match_all('/-\s*(\w+):\s*(.*)/i', $content, $mealsMatches, PREG_SET_ORDER);
     //         $meals = [];
 
-    //         foreach ($mealsMatches as $mealMatch) {
+    //         // Match lines like "Breakfast: ..." OR "- Breakfast: ..."
+    //         preg_match_all('/(?:-)?\s*(Breakfast|Snack|Mid-Morning Snack|Afternoon Snack|Lunch|Dinner):\s*(.*)/i', $content, $mealMatches, PREG_SET_ORDER);
+
+    //         foreach ($mealMatches as $mealMatch) {
     //             $mealType = ucfirst(strtolower(trim($mealMatch[1])));
     //             $mealDetails = trim($mealMatch[2]);
+
     //             $meals[$mealType][] = $mealDetails;
     //         }
 
-    //         for ($d = $startDay; $d <= $endDay; $d++) {
-    //             $parsedPlan["Day $d"] = $meals;
-    //         }
+    //         $parsedPlan["Day $dayNumber"] = $meals;
     //     }
 
-    //     // Extract tips — search for lines starting with "Remember to", "Make sure", "It's important", etc.
+    //     // Extract tips section
     //     $lines = preg_split("/\r\n|\n|\r/", $rawText);
     //     foreach ($lines as $line) {
     //         $line = trim($line);
 
-    //         if (preg_match('/^(Remember to|Make sure|It\'s important|Consult|Repeat|Monitor)/i', $line)) {
+    //         // Identify the start of the tips section by common phrases
+    //         if (preg_match('/^(Remember to|Make sure|It\'s important|Repeat|Monitor|Consult|Tips:)/i', $line)) {
     //             $inTips = true;
     //         }
 
@@ -207,68 +239,14 @@ class NutritionController extends Controller
     //             $tips .= $line . ' ';
     //         }
     //     }
-    //     // dd($parsedPlan);
+
     //     return [
     //         'plan' => $parsedPlan,
-    //         'tips' => trim($tips)
+    //         'tips' => trim($tips),
     //     ];
     // }
 
-    // private function parseNutritionPlan($rawText)
-    // {
-    //     // $sections = preg_split('/\*\*Day (\d+)-(\d+):\*\*/', $rawText, -1, PREG_SPLIT_DELIM_CAPTURE);
-    //     $sections = preg_split('/Day (\d+)-(\d+):/', $rawText, -1, PREG_SPLIT_DELIM_CAPTURE);
 
-    //     $parsedPlan = [];
-    //     $tips = '';
-    //     $inTips = false;
-    //     for ($i = 1; $i < count($sections); $i += 3) {
-    //         $startDay = $sections[$i];
-    //         $endDay = $sections[$i + 1];
-    //         $content = $sections[$i + 2];
-
-    //         // preg_match_all('/\*\*(.*?)\*\*\s*- ([^-]*)/', $content, $matches, PREG_SET_ORDER);
-    //         preg_match_all('/-\s*(\w+):\s*(.*)/', $content, $matches, PREG_SET_ORDER);
-
-    //         $meals = [];
-    //         foreach ($matches as $match) {
-    //             $mealType = trim($match[1]);
-    //             $mealDetails = trim($match[2]);
-    //             $meals[$mealType][] = $mealDetails;
-    //         }
-
-    //         for ($d = $startDay; $d <= $endDay; $d++) {
-    //             $parsedPlan["Day $d"] = $meals;
-    //         }
-    //     }
-
-    //     // Extract the tip text after the last meal block
-    //     // $lastDayPattern = '/\*\*Day \d+-\d+:\*\*.*?\*\*Dinner:\*\*.*?(?:\n|$)/s';
-    //     // if (preg_match($lastDayPattern, $rawText, $match)) {
-    //     //     $tips = trim(str_replace($match[0], '', $rawText));
-    //     // }
-    //     $lines = preg_split("/\r\n|\n|\r/", $rawText);
-    //     foreach ($lines as $line) {
-    //         $line = trim($line);
-
-    //         // If we've reached the tips section
-    //         if (stripos($line, 'remember to') !== false && !$inTips) {
-    //             $inTips = true;
-    //             $tips .= $line . ' ';
-    //             continue;
-    //         }
-
-    //         if ($inTips) {
-    //             $tips .= $line . ' ';
-    //             continue;
-    //         }
-    //     }
-    //     dd($parsedPlan);
-    //     return [
-    //         'plan' => $parsedPlan,
-    //         'tips' => $tips
-    //     ];
-    // }
 
 
 

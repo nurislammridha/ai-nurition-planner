@@ -112,7 +112,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             <div>
-                <label class="block font-medium">Health Conditions</label>
+                <label class="block font-medium">Health Conditions<span class="text-red-500 font-bold">*</span></label>
                 <select name="health_conditions[]" id="healthConditions" multiple
                     class="w-full p-2 border rounded focus:ring focus:ring-blue-300">
                     <option value="None">None</option>
@@ -129,7 +129,7 @@
                 </select>
             </div>
             <div>
-                <label class="block font-medium">Food Allergies</label>
+                <label class="block font-medium">Food Allergies<span class="text-red-500 font-bold">*</span></label>
                 <select name="allergies[]" id="allergies" class="w-full p-2 border rounded focus:ring focus:ring-blue-300" multiple>
                     <option value="None">None</option>
                     <option value="Dairy">Dairy</option>
