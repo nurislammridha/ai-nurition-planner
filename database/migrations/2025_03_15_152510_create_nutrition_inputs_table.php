@@ -24,7 +24,7 @@ return new class extends Migration
             $table->integer('meals_per_day');
             $table->json('health_conditions')->nullable();
             $table->json('allergies')->nullable();
-            $table->text('nutrition_plan');
+            $table->text('workout_plan')->nullable()->default('');
             $table->timestamps();
         });
     }

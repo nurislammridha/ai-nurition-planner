@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nutrition Planner</title>
+    <title>{{ $pageTitle ?? 'Nutrition Planner' }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/heroicons@2.0.18/heroicons.min.js"></script>
 
@@ -20,6 +20,6 @@
    <!-- <div class="container mx-auto mt-6"> -->
     <div class="sticky top-0 z-10 shadow backdrop-blur-lg px-4 py-4 lg:px-8">
         <h2 class="text-center text-2xl md:text-3xl font-bold text-primary-500">
-            Nutrition Planner
+            {{ $pageTitle ?? 'Nutrition Planner' }}
         </h2>
     </div>

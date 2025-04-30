@@ -1,4 +1,4 @@
-@include('layouts.header')
+@include('layouts.header', ['pageTitle' => trim($__env->yieldContent('title'))])
 
 <div>
     @yield('content')
