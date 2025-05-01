@@ -1,13 +1,11 @@
 @extends('layouts.master')
-
+@section('title', 'Workout Planner')
 @section('content')
 <div class="min-h-screen flex items-center justify-center bg-gray-100 px-4 py-12">
     <div class="bg-white shadow-md rounded-lg w-full max-w-2xl p-8">
-        <h2 class="text-2xl font-bold text-center text-blue-700 mb-6">Edit Meals for Day {{ $day }}</h2>
-
-        <form method="POST" action="{{ route('nutrition.updateDay', [$nutritionId, $day]) }}" class="space-y-6">
+        <h2 class="text-2xl font-bold text-center text-blue-700 mb-6">Edit Workout for Day {{ $day }}</h2>
+          <form method="POST" action="{{ route('workout.updateDay', [$workoutId, $day]) }}" class="space-y-6">
             @csrf
-
             @foreach($meals as $mealType => $items)
                 <div>
                     <label class="block text-lg font-semibold text-gray-800 mb-2">{{ ucfirst($mealType) }}</label>

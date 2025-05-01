@@ -41,7 +41,6 @@
             <div>
                 <label class="block font-medium">Plan Duration<span class="text-red-500 font-bold">*</span></label>
                 <select name="plan_duration" class="w-full p-2 border rounded focus:ring focus:ring-blue-300" required>
-                    <option value="">Select plan duration</option>
                     <option value="1" {{ $nutrition->plan_duration==='1'?'selected':'' }}>One day</option>
                     <option value="7" {{ $nutrition->plan_duration==='7'?'selected':'' }}>7 days</option>
                     <option value="15" {{ $nutrition->plan_duration==='15'?'selected':'' }}>15 days</option>

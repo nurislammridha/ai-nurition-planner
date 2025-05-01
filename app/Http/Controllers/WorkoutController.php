@@ -261,24 +261,29 @@ class WorkoutController extends Controller
     //edit
     public function edit(Workout $workout)
     {
-        return view('edit', compact('workout'));
+        return view('workout.edit', compact('workout'));
     }
     public function update(Request $request, Workout $workout)
     {
         $request->validate([
+            'name' => 'required|string',
             'age' => 'required|integer',
             'height' => 'required|numeric',
             'weight' => 'required|numeric',
+            'fitness_goals' => 'required|string',
             'gender' => 'required|string',
-            'name' => 'required|string',
-            'goal' => 'required|string',
-            'diet_type' => 'required|string',
-            'meals_per_day' => 'required|string',
-            'plan_duration' => 'required|string',
+            'training_level' => 'required|string',
+            'preferred_training_style' => 'required|string',
+            'training_days_per_week' => 'required|string',
+            'preferred_session_length' => 'required|string',
+            'lifestyle_activity_level' => 'required|string',
+            'stress_level' => 'required|string',
+            'sleep_quality' => 'required|string',
+            // 'injuries_health_conditions' => 'nullable|array',
+            // 'available_equipments' => 'nullable|array',
+            'plan_duration' => 'required|string', // e.g., 7, 15, 30 days
         ]);
 
-
-        // Call OpenAI API for AI-Powered Nutrition Plan
         $openaiResponse = Http::withHeaders([
             'Authorization' => 'Bearer ' . env('OPENAI_API_KEY'),
             'Content-Type' => 'application/json',
@@ -287,36 +292,38 @@ class WorkoutController extends Controller
             'messages' => [
                 [
                     'role' => 'system',
-                    'content' => 'You are a certified nutritionist and expert diet planner. Always prioritize user safety and strictly follow dietary restrictions. Never suggest any ingredient the user is allergic to. Even indirect suggestions, alternatives, or substitutions that include allergens must be avoided.'
+                    'content' => 'You are a certified personal trainer and expert workout planner. Your plans must consider safety, training level, injuries, and available equipment. Only suggest exercises the user can safely perform with the equipment they have.'
                 ],
                 [
                     'role' => 'user',
                     'content' =>
-                    "Please create a personalized diet plan based on the following information. ⚠️ I have a serious allergy to the following foods: " . implode(', ', $request->allergies) . ".\n\n" .
-                        "🚫 DO NOT include these allergens in any meal. Not as main ingredients, not as condiments, and not as alternatives. That includes any type of fish, seafood, sauces, stocks, oils, or supplements made from these ingredients.\n" .
-                        "If a recipe usually contains these allergens, exclude or replace them with safe alternatives.\n\n" .
-                        "My details:\n" .
-                        "Age: {$request->age} years\n" .
+                    "Please create a personalized workout plan for {$request->plan_duration} days based on the following information:\n\n" .
+                        "Name: {$request->name}\n" .
+                        "Age: {$request->age}\n" .
                         "Gender: {$request->gender}\n" .
                         "Height: {$request->height} cm\n" .
                         "Weight: {$request->weight} kg\n" .
-                        "Goal: {$request->goal}\n" .
-                        "Health Conditions: " . implode(', ', $request->health_conditions) . "\n" .
-                        "Diet Type: {$request->diet_type}\n" .
-                        "Meals per day: {$request->meals_per_day}\n" .
-                        "Plan duration: {$request->plan_duration} days\n\n" .
-                        "⚠️ IMPORTANT: You must generate a complete, unique meal plan for exactly {$request->plan_duration} days. Do not repeat or reuse any days or meals. Do not say 'repeat the above for the remaining days'. The plan must contain individual meals for each day from Day 1 to Day {$request->plan_duration}. This is a strict requirement. If the user requests 15 days, return exactly 15 full days. If 30 days, return 30 days. No summarizing or skipping.\n\n" .
-                        "⚠️ Again, double-check every meal to ensure it is 100% free from all allergens. If any meal is unsafe, it must be reworked. This is a health-critical instruction."
-
-                    // "Plan duration: {$request->plan_duration} days\n\n" .
-                    // "⚠️ Again, double-check every meal to ensure it is 100% free from all allergens. If any meal is unsafe, it must be reworked. This is a health-critical instruction. Ensure plan duration is for {$request->plan_duration} days"
+                        "Fitness Goal: {$request->fitness_goals}\n" .
+                        "Training Level: {$request->training_level}\n" .
+                        "Preferred Training Style: {$request->preferred_training_style}\n" .
+                        "Training Days per Week: {$request->training_days_per_week}\n" .
+                        "Preferred Session Length: {$request->preferred_session_length}\n" .
+                        "Lifestyle Activity Level: {$request->lifestyle_activity_level}\n" .
+                        "Stress Level: {$request->stress_level}\n" .
+                        "Sleep Quality: {$request->sleep_quality}\n" .
+                        "Injuries/Health Conditions: " . implode(', ', $request->injuries_health_conditions ?? []) . "\n" .
+                        "Available Equipment: " . implode(', ', $request->available_equipments ?? []) . "\n\n" .
+                        "⚠️ IMPORTANT:\n" .
+                        "- Ensure the plan includes different exercises each day for {$request->plan_duration} days.\n" .
+                        "- Suggest warm-up and cool-down for each session.\n" .
+                        "- Tailor exercises based on training level and injuries.\n" .
+                        "- ONLY use the listed available equipment.\n" .
+                        "- Do NOT repeat workouts. Each day must be unique.\n" .
+                        "- Include brief rest guidance on non-training days if applicable."
                 ]
             ],
             'temperature' => 0.7
         ]);
-
-
-        // $plan = $openaiResponse->json()['choices'][0]['message']['content'] ?? 'No plan available.';
         Log::info('OpenAI API response:', $openaiResponse->json());
 
         if ($openaiResponse->successful()) {
@@ -337,6 +344,25 @@ class WorkoutController extends Controller
             'allergies' => $request->allergies,
             'nutrition_plan' => $plan
         ]);
+        $workout->update([
+            'name' => $request->name,
+            'age' => $request->age,
+            'height' => $request->height,
+            'weight' => $request->weight,
+            'fitness_goals' => $request->fitness_goals,
+            'gender' => $request->gender,
+            'training_level' => $request->training_level,
+            'preferred_training_style' => $request->preferred_training_style,
+            'training_days_per_week' => $request->training_days_per_week,
+            'preferred_session_length' => $request->preferred_session_length,
+            'lifestyle_activity_level' => $request->lifestyle_activity_level,
+            'stress_level' => $request->stress_level,
+            'sleep_quality' => $request->sleep_quality,
+            'injuries_health_conditions' => $request->injuries_health_conditions,
+            'available_equipments' => $request->available_equipments,
+            'plan_duration' => $request->plan_duration,
+            'workout_plan' => $plan,
+        ]);
         // return view('nutrition', compact('plan'));
         return redirect()->route('workout.index')->with('success', 'Workout Plan updated successfully!');
     }
@@ -344,7 +370,7 @@ class WorkoutController extends Controller
     public function destroy(Workout $workout)
     {
         $workout->delete();
-        return redirect()->route('workout.index')->with('success', 'Post deleted successfully');
+        return redirect()->route('workout.index')->with('success', 'Workout plan deleted successfully');
     }
     public function exportPdf($id)
     {
@@ -382,31 +408,119 @@ class WorkoutController extends Controller
             'workoutId' => $id
         ]);
     }
-
     private function rebuildRawText(string $intro, array $plan, string $tips): string
     {
         $text = trim($intro) . "\n\n";
 
-        foreach ($plan as $day => $meals) {
-            $text .= "$day:\n";
-            foreach ($meals as $mealType => $items) {
-                foreach ($items as $item) {
-                    $text .= "- $mealType: $item\n";
+        foreach ($plan as $day => $sections) {
+            // Day line: **Day 1: Title**
+            $text .= "**{$day}**\n\n";
+
+            // If this day has only one string (like Day 4 with a single line of rest text)
+            if (isset($sections['Info']) && is_array($sections['Info'])) {
+                foreach ($sections['Info'] as $line) {
+                    $text .= "- {$line}\n";
                 }
+                $text .= "\n";
+                continue;
             }
-            $text .= "\n";
+
+            foreach ($sections as $sectionTitle => $items) {
+                // Example: 1. Warm-up:
+                $text .= "{$sectionTitle}:\n";
+                foreach ($items as $item) {
+                    $text .= "- {$item}\n";
+                }
+                $text .= "\n";
+            }
         }
 
-        if (!empty($tips)) {
+        // Append final reminder tips (if exists)
+        if (!empty(trim($tips))) {
             $text .= trim($tips);
         }
 
         return trim($text);
     }
+
+
+    // private function rebuildRawText(string $intro, array $plan, string $tips): string
+    // {
+    //     $text = trim($intro) . "\n\n";
+
+    //     foreach ($plan as $day => $sections) {
+    //         // Extract day number and optional title
+    //         if (preg_match('/Day\s*(\d+)/i', $day, $dayMatch)) {
+    //             $dayNumber = $dayMatch[1];
+    //         } else {
+    //             continue;
+    //         }
+
+    //         // Extract title from parsed data (usually from first section items if not saved separately)
+    //         $title = '';
+    //         if (!empty($sections['Info'][0])) {
+    //             $title = $sections['Info'][0];
+    //         } elseif (!empty($sections['Workout'][0]) && preg_match('/\*\*Day\s*\d+:\s*(.*?)\*\*/', $sections['Workout'][0], $tMatch)) {
+    //             $title = $tMatch[1];
+    //         }
+
+    //         // Fallback: use existing label if it includes title
+    //         if (preg_match('/Day\s*\d+:\s*(.+)/', $day, $tMatch)) {
+    //             $title = $tMatch[1];
+    //         }
+
+    //         $text .= "**Day $dayNumber" . ($title ? ": $title" : "") . "**\n";
+
+    //         foreach ($sections as $section => $items) {
+    //             if (!is_array($items) || empty($items)) continue;
+
+    //             // Section title (e.g., Warm-up)
+    //             $text .= "- $section: " . array_shift($items) . "\n";
+
+    //             foreach ($items as $item) {
+    //                 // Maintain numbering or bullets if user added them, otherwise default to numbered
+    //                 if (preg_match('/^(\-|\d+[\.\)])/', $item)) {
+    //                     $text .= "$item\n";
+    //                 } else {
+    //                     $text .= "$item\n";
+    //                 }
+    //             }
+
+    //             $text .= "\n";
+    //         }
+    //     }
+
+    //     if (!empty($tips)) {
+    //         $text .= trim($tips);
+    //     }
+
+    //     return trim($text);
+    // }
+
+    // private function rebuildRawText(string $intro, array $plan, string $tips): string
+    // {
+    //     $text = trim($intro) . "\n\n";
+
+    //     foreach ($plan as $day => $meals) {
+    //         $text .= "$day:\n";
+    //         foreach ($meals as $mealType => $items) {
+    //             foreach ($items as $item) {
+    //                 $text .= "- $mealType: $item\n";
+    //             }
+    //         }
+    //         $text .= "\n";
+    //     }
+
+    //     if (!empty($tips)) {
+    //         $text .= trim($tips);
+    //     }
+
+    //     return trim($text);
+    // }
     public function updateDay(Request $request, $id, $day)
     {
-        $nutrition = Workout::findOrFail($id);
-        $rawText = $nutrition->nutrition_plan;
+        $workout = Workout::findOrFail($id);
+        $rawText = $workout->workout_plan;
 
         $parsed = $this->parseWorkoutPlan($rawText);
         $dayKey = "Day $day";
@@ -430,10 +544,10 @@ class WorkoutController extends Controller
         // Rebuild full raw text
         $newRawText = $this->rebuildRawText($intro, $parsed['plan'], $parsed['tips']);
 
-        $nutrition->nutrition_plan = $newRawText;
+        $workout->workout_plan = $newRawText;
         // dd($newRawText);
-        $nutrition->save();
+        $workout->save();
 
-        return redirect()->route('workout.show', $nutrition->id)->with('success', "Day $day updated successfully.");
+        return redirect()->route('workout.show', $workout->id)->with('success', "Day $day updated successfully.");
     }
 }
