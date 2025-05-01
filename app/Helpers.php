@@ -11,6 +11,20 @@ if (!function_exists('goalColor')) {
         };
     }
 }
+function fitnessGoalColor($goal)
+{
+    return match ($goal) {
+        'Lose Fat' => 'bg-base',   // Use Tailwind classes
+        'Build Muscle' => 'bg-danger',
+        'Increase Endurance' => 'bg-primary-800',
+        'Improve Flexibility' => 'bg-base',   // Use Tailwind classes
+        'Sports Performance' => 'bg-danger',
+        'Prepare for Event' => 'bg-primary-800',
+        'General Fitness' => 'bg-base',   // Use Tailwind classes
+        'Post-Injury Recovery' => 'bg-danger',
+        default => 'bg-gray-500',
+    };
+}
 function getMealEmoji($type)
 {
     return match (strtolower($type)) {
