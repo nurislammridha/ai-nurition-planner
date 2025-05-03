@@ -129,12 +129,12 @@ class WorkoutController extends Controller
         $tips = '';
         $inTips = false;
 
-        // Clean and normalize the text
-        $rawText = preg_replace('/\*\*(.*?)\*\*/', '**$1**', $rawText); // Normalize bold
-        $rawText = preg_replace('/\r\n|\r/', "\n", $rawText);           // Normalize line endings
+        // Normalize text
+        $rawText = preg_replace('/\*\*(.*?)\*\*/', '**$1**', $rawText);
+        $rawText = preg_replace('/\r\n|\r/', "\n", $rawText);
 
-        // Match each day's block (including Active Recovery, etc.)
-        preg_match_all('/\*\*Day\s*(\d+):\s*(.*?)\*\*\n([\s\S]*?)(?=(\*\*Day\s*\d+:|\*\*|$))/i', $rawText, $matches, PREG_SET_ORDER);
+        // Match all days
+        preg_match_all('/\*\*Day\s*(\d+):\s*(.*?)\*\*\n([\s\S]*?)(?=\*\*Day\s*\d+:|\Z)/i', $rawText, $matches, PREG_SET_ORDER);
 
         foreach ($matches as $match) {
             $dayNumber = (int)trim($match[1]);
@@ -142,41 +142,50 @@ class WorkoutController extends Controller
             $content = trim($match[3]);
 
             $sections = [];
-            $currentSection = null;
-
             $lines = preg_split("/\n/", $content);
+            $currentSection = null;
 
             foreach ($lines as $line) {
                 $line = trim($line);
                 if (empty($line)) continue;
 
-                if (preg_match('/^(Warm-up|Cool[- ]?down|Workout|Dynamic Warm-up|Stretching|Recovery):?/i', $line, $sectionMatch)) {
+                // Detect section headers like Warm-up, Cool-down, etc.
+                if (preg_match('/^(Warm-up|Cool[- ]?down|Workout|Stretching|Recovery):?\s*(.*)$/i', $line, $sectionMatch)) {
                     $currentSection = ucfirst(strtolower($sectionMatch[1]));
                     $sections[$currentSection] = [];
-                } elseif (preg_match('/^[\d\-\•]+[\.\)]?\s*/', $line) || $currentSection) {
-                    // If it's a bullet/numbered item or already inside a section
+
+                    // Add inline content if any
+                    if (!empty($sectionMatch[2])) {
+                        $sections[$currentSection][] = $sectionMatch[2];
+                    }
+                }
+                // Check for list items (numbered or bullets)
+                elseif (preg_match('/^(\d+\.|\-|\•)\s*(.+)$/', $line, $itemMatch)) {
                     if (!$currentSection) {
-                        $currentSection = 'Workout'; // Default section if none is found
+                        $currentSection = 'Workout';
+                        $sections[$currentSection] = [];
+                    }
+                    $sections[$currentSection][] = $itemMatch[2];
+                } else {
+                    // Non-sectioned info like rest days or free text
+                    if (!$currentSection) {
+                        $currentSection = 'Info';
                         $sections[$currentSection] = [];
                     }
                     $sections[$currentSection][] = $line;
-                } else {
-                    // If it’s standalone info (like on Day 7)
-                    $sections['Info'][] = $line;
                 }
             }
 
             $parsedPlan["Day $dayNumber"] = $sections;
         }
 
-        // Handle health tips from end of raw text
+        // Extract tips from final paragraph
         $lines = preg_split("/\n/", $rawText);
         foreach ($lines as $line) {
             $line = trim($line);
             if (preg_match('/^(Tips|Remember|Stay|Adjust|Focus|Ensure|Listen|Consult|Engage|Hydrate|Rest|Aim)\b/i', $line)) {
                 $inTips = true;
             }
-
             if ($inTips) {
                 $tips .= $line . ' ';
             }
@@ -194,56 +203,51 @@ class WorkoutController extends Controller
     //     $tips = '';
     //     $inTips = false;
 
-    //     // Clean the text
-    //     $rawText = preg_replace('/(\*\*+)(\s*\n)?/', '', $rawText); // Remove bold markers
-    //     $rawText = preg_replace('/---+/', '', $rawText);           // Remove horizontal rules
-    //     $rawText = preg_replace('/\r\n|\r/', "\n", $rawText);      // Normalize newlines
+    //     // Clean and normalize the text
+    //     $rawText = preg_replace('/\*\*(.*?)\*\*/', '**$1**', $rawText); // Normalize bold
+    //     $rawText = preg_replace('/\r\n|\r/', "\n", $rawText);           // Normalize line endings
 
-    //     // Match day blocks
-    //     preg_match_all('/Day\s*(\d+):([\s\S]*?)(?=(Day\s*\d+:|Rest Day:|\z))/i', $rawText, $dayMatches, PREG_SET_ORDER);
+    //     // Match each day's block (including Active Recovery, etc.)
+    //     preg_match_all('/\*\*Day\s*(\d+):\s*(.*?)\*\*\n([\s\S]*?)(?=(\*\*Day\s*\d+:|\*\*|$))/i', $rawText, $matches, PREG_SET_ORDER);
 
-    //     foreach ($dayMatches as $match) {
-    //         $dayNumber = (int)$match[1];
-    //         $content = trim($match[2]);
+    //     foreach ($matches as $match) {
+    //         $dayNumber = (int)trim($match[1]);
+    //         $dayTitle = 'Day ' . $dayNumber . ': ' . trim($match[2]);
+    //         $content = trim($match[3]);
 
     //         $sections = [];
     //         $currentSection = null;
 
-    //         // Split content into lines
     //         $lines = preg_split("/\n/", $content);
 
     //         foreach ($lines as $line) {
     //             $line = trim($line);
-
     //             if (empty($line)) continue;
 
-    //             // Detect sections
-    //             if (preg_match('/^(WarmUp|Workout|Cool[- ]?Down|Dynamic Warm[- ]?Up):\s*$/i', $line, $sectionMatch)) {
-    //                 $currentSection = ucfirst(strtolower(trim($sectionMatch[1])));
+    //             if (preg_match('/^(Warm-up|Cool[- ]?down|Workout|Dynamic Warm-up|Stretching|Recovery):?/i', $line, $sectionMatch)) {
+    //                 $currentSection = ucfirst(strtolower($sectionMatch[1]));
     //                 $sections[$currentSection] = [];
-    //             } elseif ($currentSection) {
-    //                 // Add item under current section
+    //             } elseif (preg_match('/^[\d\-\•]+[\.\)]?\s*/', $line) || $currentSection) {
+    //                 // If it's a bullet/numbered item or already inside a section
+    //                 if (!$currentSection) {
+    //                     $currentSection = 'Workout'; // Default section if none is found
+    //                     $sections[$currentSection] = [];
+    //                 }
     //                 $sections[$currentSection][] = $line;
+    //             } else {
+    //                 // If it’s standalone info (like on Day 7)
+    //                 $sections['Info'][] = $line;
     //             }
     //         }
 
     //         $parsedPlan["Day $dayNumber"] = $sections;
     //     }
 
-    //     // Handle special days (like Rest Day or Active Recovery)
-    //     if (preg_match_all('/\*\*(Rest Day|Day \d+: [^\*]+)\*\*\n\n([\s\S]*?)(?=(\*\*|$))/', $rawText, $restMatches, PREG_SET_ORDER)) {
-    //         foreach ($restMatches as $match) {
-    //             $dayTitle = trim($match[1]);
-    //             $details = array_filter(array_map('trim', explode("\n", trim($match[2]))));
-    //             $parsedPlan[$dayTitle] = ['Info' => $details];
-    //         }
-    //     }
-
-    //     // Extract Tips
+    //     // Handle health tips from end of raw text
     //     $lines = preg_split("/\n/", $rawText);
     //     foreach ($lines as $line) {
     //         $line = trim($line);
-    //         if (preg_match('/^(This|Adjust|Stay|Listen|Focus|Remember|Tips:|Ensure|Consult)/i', $line)) {
+    //         if (preg_match('/^(Tips|Remember|Stay|Adjust|Focus|Ensure|Listen|Consult|Engage|Hydrate|Rest|Aim)\b/i', $line)) {
     //             $inTips = true;
     //         }
 
@@ -257,6 +261,7 @@ class WorkoutController extends Controller
     //         'tips' => trim($tips),
     //     ];
     // }
+
 
     //edit
     public function edit(Workout $workout)
@@ -401,25 +406,81 @@ class WorkoutController extends Controller
         $workout = Workout::findOrFail($id);
         $parsed = $this->parseWorkoutPlan($workout->workout_plan);
         $dayKey = "Day $day";
-        // dd($meals);
+        // dd($parsed['plan'][$dayKey] ?? []);
         return view('workout.edit-day', [
             'day' => $day,
             'meals' => $parsed['plan'][$dayKey] ?? [],
             'workoutId' => $id
         ]);
     }
+    // function rebuildRawText($originalText, $dayTitle, $updatedWorkoutArray)
+    // {
+    //     // Split using regex to capture all day blocks
+    //     $pattern = '/\*\*(Day\s\d+:.*)\*\*/';
+    //     preg_match_all($pattern, $originalText, $matches, PREG_OFFSET_CAPTURE);
+
+    //     $sections = [];
+    //     $total = count($matches[0]);
+
+    //     for ($i = 0; $i < $total; $i++) {
+    //         $titleText = $matches[1][$i][0]; // example: Day 1: Full Body Dumbbell Workout
+    //         $startPos = $matches[0][$i][1];
+    //         $endPos = ($i + 1 < $total) ? $matches[0][$i + 1][1] : strlen($originalText);
+    //         $content = substr($originalText, $startPos, $endPos - $startPos);
+
+    //         $sections[] = [
+    //             'title' => $titleText,
+    //             'content' => $content,
+    //         ];
+    //     }
+
+    //     // Rebuild content
+    //     $rebuilt = '';
+    //     foreach ($sections as $section) {
+    //         if (trim($section['title']) === trim($dayTitle)) {
+    //             $newContent = "**{$dayTitle}**\n";
+
+    //             $counter = 1;
+    //             $currentSection = '';
+
+    //             foreach ($updatedWorkoutArray as $line) {
+    //                 $trimmed = trim($line);
+
+    //                 if (str_ends_with($trimmed, ':')) {
+    //                     $currentSection = strtolower(rtrim($trimmed, ':'));
+    //                     $newContent .= "- {$trimmed}\n";
+    //                     $counter = 1;
+    //                 } elseif ($currentSection === 'workout') {
+    //                     $newContent .= "{$counter}. {$trimmed}\n";
+    //                     $counter++;
+    //                 } else {
+    //                     $newContent .= "{$trimmed}\n";
+    //                 }
+    //             }
+
+    //             $rebuilt .= $newContent . "\n\n";
+    //         } else {
+    //             $rebuilt .= $section['content'] . "\n\n";
+    //         }
+    //     }
+
+    //     return trim($rebuilt);
+    // }
+
+
+
     private function rebuildRawText(string $intro, array $plan, string $tips): string
     {
         $text = trim($intro) . "\n\n";
 
         foreach ($plan as $day => $sections) {
             // Day line: **Day 1: Title**
-            $text .= "**{$day}**\n\n";
+            $text .= "**{$day}:**\n\n";
 
             // If this day has only one string (like Day 4 with a single line of rest text)
             if (isset($sections['Info']) && is_array($sections['Info'])) {
                 foreach ($sections['Info'] as $line) {
-                    $text .= "- {$line}\n";
+                    $text .= "{$line}\n";
                 }
                 $text .= "\n";
                 continue;
@@ -429,7 +490,7 @@ class WorkoutController extends Controller
                 // Example: 1. Warm-up:
                 $text .= "{$sectionTitle}:\n";
                 foreach ($items as $item) {
-                    $text .= "- {$item}\n";
+                    $text .= "{$item}\n";
                 }
                 $text .= "\n";
             }
@@ -443,80 +504,6 @@ class WorkoutController extends Controller
         return trim($text);
     }
 
-
-    // private function rebuildRawText(string $intro, array $plan, string $tips): string
-    // {
-    //     $text = trim($intro) . "\n\n";
-
-    //     foreach ($plan as $day => $sections) {
-    //         // Extract day number and optional title
-    //         if (preg_match('/Day\s*(\d+)/i', $day, $dayMatch)) {
-    //             $dayNumber = $dayMatch[1];
-    //         } else {
-    //             continue;
-    //         }
-
-    //         // Extract title from parsed data (usually from first section items if not saved separately)
-    //         $title = '';
-    //         if (!empty($sections['Info'][0])) {
-    //             $title = $sections['Info'][0];
-    //         } elseif (!empty($sections['Workout'][0]) && preg_match('/\*\*Day\s*\d+:\s*(.*?)\*\*/', $sections['Workout'][0], $tMatch)) {
-    //             $title = $tMatch[1];
-    //         }
-
-    //         // Fallback: use existing label if it includes title
-    //         if (preg_match('/Day\s*\d+:\s*(.+)/', $day, $tMatch)) {
-    //             $title = $tMatch[1];
-    //         }
-
-    //         $text .= "**Day $dayNumber" . ($title ? ": $title" : "") . "**\n";
-
-    //         foreach ($sections as $section => $items) {
-    //             if (!is_array($items) || empty($items)) continue;
-
-    //             // Section title (e.g., Warm-up)
-    //             $text .= "- $section: " . array_shift($items) . "\n";
-
-    //             foreach ($items as $item) {
-    //                 // Maintain numbering or bullets if user added them, otherwise default to numbered
-    //                 if (preg_match('/^(\-|\d+[\.\)])/', $item)) {
-    //                     $text .= "$item\n";
-    //                 } else {
-    //                     $text .= "$item\n";
-    //                 }
-    //             }
-
-    //             $text .= "\n";
-    //         }
-    //     }
-
-    //     if (!empty($tips)) {
-    //         $text .= trim($tips);
-    //     }
-
-    //     return trim($text);
-    // }
-
-    // private function rebuildRawText(string $intro, array $plan, string $tips): string
-    // {
-    //     $text = trim($intro) . "\n\n";
-
-    //     foreach ($plan as $day => $meals) {
-    //         $text .= "$day:\n";
-    //         foreach ($meals as $mealType => $items) {
-    //             foreach ($items as $item) {
-    //                 $text .= "- $mealType: $item\n";
-    //             }
-    //         }
-    //         $text .= "\n";
-    //     }
-
-    //     if (!empty($tips)) {
-    //         $text .= trim($tips);
-    //     }
-
-    //     return trim($text);
-    // }
     public function updateDay(Request $request, $id, $day)
     {
         $workout = Workout::findOrFail($id);
