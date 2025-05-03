@@ -1,4 +1,5 @@
 @extends('layouts.master')
+@section('title', 'Nutrition Planner')
 @section('content')
 <div class="container mx-auto mt-5 p-6  shadow-md rounded-lg max-w-3xl">
     <h2 class="text-center text-xl font-semibold">Create Nutrition Plan</h2>

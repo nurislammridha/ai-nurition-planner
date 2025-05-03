@@ -1,4 +1,5 @@
 @extends('layouts.master')
+@section('title', 'Nutrition Planner')
   @section('content')
   <div class="container mx-auto mt-4 px-4">
     <a href="{{ route('nutrition.create') }}"
