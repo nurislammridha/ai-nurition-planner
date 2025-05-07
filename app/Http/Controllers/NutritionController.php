@@ -42,7 +42,8 @@ class NutritionController extends Controller
             'Authorization' => 'Bearer ' . env('OPENAI_API_KEY'),
             'Content-Type' => 'application/json',
         ])->post('https://api.openai.com/v1/chat/completions', [
-            'model' => 'gpt-3.5-turbo',
+            'model' => 'gpt-4o-mini',
+            // 'model' => 'gpt-3.5-turbo',
             'messages' => [
                 [
                     'role' => 'system',
@@ -274,7 +275,7 @@ class NutritionController extends Controller
             'Authorization' => 'Bearer ' . env('OPENAI_API_KEY'),
             'Content-Type' => 'application/json',
         ])->post('https://api.openai.com/v1/chat/completions', [
-            'model' => 'gpt-3.5-turbo',
+            'model' => 'gpt-4o-mini',
             'messages' => [
                 [
                     'role' => 'system',

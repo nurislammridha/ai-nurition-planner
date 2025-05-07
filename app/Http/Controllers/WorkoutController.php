@@ -42,10 +42,11 @@ class WorkoutController extends Controller
             'plan_duration' => 'required|string', // e.g., 7, 15, 30 days
         ]);
         $openaiResponse = Http::withHeaders([
-            'Authorization' => 'Bearer ' . env('OPENAI_API_KEY'),
+            'Authorization' => 'Bearer ' . env('OPENAI_API_KEY_WORKOUT'),
             'Content-Type' => 'application/json',
         ])->post('https://api.openai.com/v1/chat/completions', [
-            'model' => 'gpt-3.5-turbo',
+            'model' => 'gpt-4o-mini',
+            // 'model' => 'gpt-3.5-turbo',
             'messages' => [
                 [
                     'role' => 'system',
@@ -293,7 +294,8 @@ class WorkoutController extends Controller
             'Authorization' => 'Bearer ' . env('OPENAI_API_KEY'),
             'Content-Type' => 'application/json',
         ])->post('https://api.openai.com/v1/chat/completions', [
-            'model' => 'gpt-3.5-turbo',
+            'model' => 'gpt-4o-mini',
+            // 'model' => 'gpt-3.5-turbo',
             'messages' => [
                 [
                     'role' => 'system',
