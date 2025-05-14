@@ -27,5 +27,6 @@ class NutritionInput extends Model
     protected $casts = [
         'health_conditions' => 'array',
         'allergies' => 'array',
+        'nutrition_plan' => 'array',
     ];
 }

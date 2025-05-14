@@ -13,7 +13,7 @@ class NutritionController extends Controller
     public function index()
     {
         $posts = NutritionInput::latest()->get();
-        return view('index', compact('posts'));
+        return view('nutrition.index', compact('posts'));
         // return view('nutrition');
     }
     /**
@@ -21,8 +21,10 @@ class NutritionController extends Controller
      */
     public function create()
     {
-        return view('create');
+        return view('nutrition.create');
     }
+
+
     public function store(Request $request)
     {
         $request->validate([
@@ -36,14 +38,11 @@ class NutritionController extends Controller
             'meals_per_day' => 'required|string',
             'plan_duration' => 'required|string',
         ]);
-
-
         $openaiResponse = Http::withHeaders([
             'Authorization' => 'Bearer ' . env('OPENAI_API_KEY'),
             'Content-Type' => 'application/json',
         ])->post('https://api.openai.com/v1/chat/completions', [
             'model' => 'gpt-4o-mini',
-            // 'model' => 'gpt-3.5-turbo',
             'messages' => [
                 [
                     'role' => 'system',
@@ -53,8 +52,7 @@ class NutritionController extends Controller
                     'role' => 'user',
                     'content' =>
                     "Please create a personalized diet plan based on the following information. ⚠️ I have a serious allergy to the following foods: " . implode(', ', $request->allergies) . ".\n\n" .
-                        "🚫 DO NOT include these allergens in any meal. Not as main ingredients, not as condiments, and not as alternatives. That includes any type of fish, seafood, sauces, stocks, oils, or supplements made from these ingredients.\n" .
-                        "If a recipe usually contains these allergens, exclude or replace them with safe alternatives.\n\n" .
+                        "🚫 DO NOT include these allergens in any meal. Not as main ingredients, not as condiments, and not as alternatives.\n\n" .
                         "My details:\n" .
                         "Age: {$request->age} years\n" .
                         "Gender: {$request->gender}\n" .
@@ -65,18 +63,32 @@ class NutritionController extends Controller
                         "Diet Type: {$request->diet_type}\n" .
                         "Meals per day: {$request->meals_per_day}\n" .
                         "Plan duration: {$request->plan_duration} days\n\n" .
-                        "⚠️ IMPORTANT: You must generate a complete, unique meal plan for exactly {$request->plan_duration} days. Do not repeat or reuse any days or meals. Do not say 'repeat the above for the remaining days'. The plan must contain individual meals for each day from Day 1 to Day {$request->plan_duration}. This is a strict requirement. If the user requests 15 days, return exactly 15 full days. If 30 days, return 30 days. No summarizing or skipping.\n\n" .
-                        "⚠️ Again, double-check every meal to ensure it is 100% free from all allergens. If any meal is unsafe, it must be reworked. This is a health-critical instruction."
 
-                    // "Plan duration: {$request->plan_duration} days\n\n" .
-                    // "⚠️ Again, double-check every meal to ensure it is 100% free from all allergens. If any meal is unsafe, it must be reworked. This is a health-critical instruction. Ensure plan duration is for {$request->plan_duration} days"
+                        "⚠️ IMPORTANT: You must generate a complete, unique meal plan for exactly {$request->plan_duration} days. Each day must contain exactly {$request->meals_per_day} meals. Do not repeat or reuse meals or days.\n\n" .
+
+                        "✅ FORMAT REQUIREMENT: Respond only in raw JSON (inside triple backticks), using the following format:\n\n" .
+                        "```json\n" .
+                        "{\n" .
+                        "  \"plan\": [\n" .
+                        "    {\n" .
+                        "      \"day\": 1,\n" .
+                        "      \"meals\": [\n" .
+                        "        { \"Breakfast\": [\"Item 1\", \"Item 2\"] },\n" .
+                        "        { \"Snack\": [\"Item 1\", \"Item 2\"] },\n" .
+                        "        ... (up to {$request->meals_per_day} meals per day, meal names can be Breakfast, Snack, Lunch, Dinner, Supper, etc.)\n" .
+                        "      ]\n" .
+                        "    },\n" .
+                        "    ... (up to {$request->plan_duration} days)\n" .
+                        "  ],\n" .
+                        "  \"health_tips\": \"Short tip.\"\n" .
+                        "}\n" .
+                        "```\n\n" .
+                        "⛔ Do NOT include any explanation, comment, or text before or after the JSON. Just the triple-backtick-wrapped JSON block."
                 ]
             ],
             'temperature' => 0.7
         ]);
 
-
-        // $plan = $openaiResponse->json()['choices'][0]['message']['content'] ?? 'No plan available.';
         Log::info('OpenAI API response:', $openaiResponse->json());
 
         if ($openaiResponse->successful()) {
@@ -84,8 +96,8 @@ class NutritionController extends Controller
         } else {
             $plan = 'Error: ' . $openaiResponse->status() . ' - ' . $openaiResponse->body();
         }
-        //save to db
-        $nutrition = NutritionInput::create([
+        $planJson = parseChatGptNutritionPlan($plan);
+        NutritionInput::create([
             'name' => $request->name,
             'age' => $request->age,
             'height' => $request->height,
@@ -97,9 +109,8 @@ class NutritionController extends Controller
             'diet_type' => $request->diet_type,
             'health_conditions' => $request->health_conditions,
             'allergies' => $request->allergies,
-            'nutrition_plan' => $plan
+            'nutrition_plan' => $planJson
         ]);
-        // return view('nutrition', compact('plan'));
         return redirect()->route('nutrition.index')->with('success', 'Plan created!');
     }
     /**
@@ -109,151 +120,15 @@ class NutritionController extends Controller
 
     public function show(NutritionInput $nutrition)
     {
-        $parsed = $this->parseNutritionPlan($nutrition->nutrition_plan);
-        // @dd($parsed['plan']);
-        return view('show', [
-            'nutrition' => $nutrition,
-            'nutritionPlan' => $parsed['plan'],
-            'healthTips' => $parsed['tips']
-        ]);
+        $nutritionPlan = $nutrition->nutrition_plan['plan'] ?? [];
+        $healthTips = $nutrition->nutrition_plan['health_tips'] ?? null;
+
+        return view('nutrition.show', compact('nutrition', 'nutritionPlan', 'healthTips'));
     }
-
-    private function parseNutritionPlan($rawText)
-    {
-        $parsedPlan = [];
-        $tips = '';
-        $inTips = false;
-
-        // Clean the text
-        $rawText = preg_replace('/(\*\*+)(\s*\n)?/', '', $rawText); // Remove stray ** and bold markers
-        $rawText = preg_replace('/---+/', '', $rawText);            // Remove ---
-        $rawText = preg_replace('/\r\n|\r/', "\n", $rawText);        // Normalize newlines
-
-        // Match day blocks
-        preg_match_all('/Day\s*(\d+):([\s\S]*?)(?=Day\s*\d+:|\z)/i', $rawText, $dayMatches, PREG_SET_ORDER);
-
-        foreach ($dayMatches as $match) {
-            $dayNumber = (int)$match[1];
-            $content = trim($match[2]);
-
-            $meals = [];
-
-            // Split content into lines
-            $lines = preg_split("/\n/", $content);
-
-            $currentMealType = null;
-            $waitingForMealContent = false;
-
-            foreach ($lines as $line) {
-                $line = trim($line);
-
-                if (empty($line)) {
-                    continue;
-                }
-
-                // Check if this is a meal type header
-                if (preg_match('/^(?:-)?\s*(Breakfast|Mid-Morning Snack|Afternoon Snack|Snack|Lunch|Dinner):\s*(.*)$/i', $line, $mealHeaderMatch)) {
-                    $currentMealType = ucfirst(strtolower(trim($mealHeaderMatch[1])));
-                    $mealContent = trim($mealHeaderMatch[2]);
-
-                    if (!empty($mealContent)) {
-                        // Meal type + content on same line
-                        $meals[$currentMealType][] = $mealContent;
-                        $currentMealType = null;
-                        $waitingForMealContent = false;
-                    } else {
-                        // Meal type only, wait for next line
-                        $waitingForMealContent = true;
-                    }
-                } elseif ($waitingForMealContent && $currentMealType) {
-                    // This line is the food content for the previous meal type
-                    $meals[$currentMealType][] = $line;
-                    $currentMealType = null;
-                    $waitingForMealContent = false;
-                }
-            }
-
-            $parsedPlan["Day $dayNumber"] = $meals;
-        }
-
-        // Extract Tips
-        $lines = preg_split("/\n/", $rawText);
-        foreach ($lines as $line) {
-            $line = trim($line);
-
-            if (preg_match('/^(Remember to|Make sure|It\'s important|Repeat|Monitor|Consult|Tips:)/i', $line)) {
-                $inTips = true;
-            }
-
-            if ($inTips) {
-                $tips .= $line . ' ';
-            }
-        }
-
-        return [
-            'plan' => $parsedPlan,
-            'tips' => trim($tips),
-        ];
-    }
-
-
-
-    // private function parseNutritionPlan($rawText)
-    // {
-    //     $parsedPlan = [];
-    //     $tips = '';
-    //     $inTips = false;
-
-    //     // Match individual day sections like "Day 1:", "Day 2:", etc.
-    //     preg_match_all('/(?:\*\*)?Day\s*(\d+)(?:\*\*)?:([\s\S]*?)(?=\n(?:\*\*)?Day\s*\d+(?:\*\*)?:|\z)/i', $rawText, $dayMatches, PREG_SET_ORDER);
-
-    //     foreach ($dayMatches as $match) {
-    //         $dayNumber = (int)$match[1];
-    //         $content = trim($match[2]);
-
-    //         $meals = [];
-
-    //         // Match lines like "Breakfast: ..." OR "- Breakfast: ..."
-    //         preg_match_all('/(?:-)?\s*(Breakfast|Snack|Mid-Morning Snack|Afternoon Snack|Lunch|Dinner):\s*(.*)/i', $content, $mealMatches, PREG_SET_ORDER);
-
-    //         foreach ($mealMatches as $mealMatch) {
-    //             $mealType = ucfirst(strtolower(trim($mealMatch[1])));
-    //             $mealDetails = trim($mealMatch[2]);
-
-    //             $meals[$mealType][] = $mealDetails;
-    //         }
-
-    //         $parsedPlan["Day $dayNumber"] = $meals;
-    //     }
-
-    //     // Extract tips section
-    //     $lines = preg_split("/\r\n|\n|\r/", $rawText);
-    //     foreach ($lines as $line) {
-    //         $line = trim($line);
-
-    //         // Identify the start of the tips section by common phrases
-    //         if (preg_match('/^(Remember to|Make sure|It\'s important|Repeat|Monitor|Consult|Tips:)/i', $line)) {
-    //             $inTips = true;
-    //         }
-
-    //         if ($inTips) {
-    //             $tips .= $line . ' ';
-    //         }
-    //     }
-
-    //     return [
-    //         'plan' => $parsedPlan,
-    //         'tips' => trim($tips),
-    //     ];
-    // }
-
-
-
-
 
     public function edit(NutritionInput $nutrition)
     {
-        return view('edit', compact('nutrition'));
+        return view('nutrition.edit', compact('nutrition'));
     }
     public function update(Request $request, NutritionInput $nutrition)
     {
@@ -285,8 +160,7 @@ class NutritionController extends Controller
                     'role' => 'user',
                     'content' =>
                     "Please create a personalized diet plan based on the following information. ⚠️ I have a serious allergy to the following foods: " . implode(', ', $request->allergies) . ".\n\n" .
-                        "🚫 DO NOT include these allergens in any meal. Not as main ingredients, not as condiments, and not as alternatives. That includes any type of fish, seafood, sauces, stocks, oils, or supplements made from these ingredients.\n" .
-                        "If a recipe usually contains these allergens, exclude or replace them with safe alternatives.\n\n" .
+                        "🚫 DO NOT include these allergens in any meal. Not as main ingredients, not as condiments, and not as alternatives.\n\n" .
                         "My details:\n" .
                         "Age: {$request->age} years\n" .
                         "Gender: {$request->gender}\n" .
@@ -297,11 +171,27 @@ class NutritionController extends Controller
                         "Diet Type: {$request->diet_type}\n" .
                         "Meals per day: {$request->meals_per_day}\n" .
                         "Plan duration: {$request->plan_duration} days\n\n" .
-                        "⚠️ IMPORTANT: You must generate a complete, unique meal plan for exactly {$request->plan_duration} days. Do not repeat or reuse any days or meals. Do not say 'repeat the above for the remaining days'. The plan must contain individual meals for each day from Day 1 to Day {$request->plan_duration}. This is a strict requirement. If the user requests 15 days, return exactly 15 full days. If 30 days, return 30 days. No summarizing or skipping.\n\n" .
-                        "⚠️ Again, double-check every meal to ensure it is 100% free from all allergens. If any meal is unsafe, it must be reworked. This is a health-critical instruction."
 
-                    // "Plan duration: {$request->plan_duration} days\n\n" .
-                    // "⚠️ Again, double-check every meal to ensure it is 100% free from all allergens. If any meal is unsafe, it must be reworked. This is a health-critical instruction. Ensure plan duration is for {$request->plan_duration} days"
+                        "⚠️ IMPORTANT: You must generate a complete, unique meal plan for exactly {$request->plan_duration} days. Each day must contain exactly {$request->meals_per_day} meals. Do not repeat or reuse meals or days.\n\n" .
+
+                        "✅ FORMAT REQUIREMENT: Respond only in raw JSON (inside triple backticks), using the following format:\n\n" .
+                        "```json\n" .
+                        "{\n" .
+                        "  \"plan\": [\n" .
+                        "    {\n" .
+                        "      \"day\": 1,\n" .
+                        "      \"meals\": [\n" .
+                        "        { \"Breakfast\": [\"Item 1\", \"Item 2\"] },\n" .
+                        "        { \"Snack\": [\"Item 1\", \"Item 2\"] },\n" .
+                        "        ... (up to {$request->meals_per_day} meals per day, meal names can be Breakfast, Snack, Lunch, Dinner, Supper, etc.)\n" .
+                        "      ]\n" .
+                        "    },\n" .
+                        "    ... (up to {$request->plan_duration} days)\n" .
+                        "  ],\n" .
+                        "  \"health_tips\": \"Short tip.\"\n" .
+                        "}\n" .
+                        "```\n\n" .
+                        "⛔ Do NOT include any explanation, comment, or text before or after the JSON. Just the triple-backtick-wrapped JSON block."
                 ]
             ],
             'temperature' => 0.7
@@ -316,6 +206,7 @@ class NutritionController extends Controller
         } else {
             $plan = 'Error: ' . $openaiResponse->status() . ' - ' . $openaiResponse->body();
         }
+        $planJson = parseChatGptNutritionPlan($plan);
         //save to db
         $nutrition->update([
             'age' => $request->age,
@@ -327,7 +218,7 @@ class NutritionController extends Controller
             'diet_type' => $request->diet_type,
             'health_conditions' => $request->health_conditions,
             'allergies' => $request->allergies,
-            'nutrition_plan' => $plan
+            'nutrition_plan' => $planJson
         ]);
         // return view('nutrition', compact('plan'));
         return redirect()->route('nutrition.index')->with('success', 'Plan updated successfully!');
@@ -345,19 +236,18 @@ class NutritionController extends Controller
     public function exportPdf($id)
     {
         $nutrition = NutritionInput::findOrFail($id);
-        $parsed = $this->parseNutritionPlan($nutrition->nutrition_plan);
-        $nutritionPlan = $parsed['plan']; // Adjust according to your data
-        $healthTips =  $parsed['tips']; // Adjust if needed
+        $nutritionPlan = $nutrition->nutrition_plan['plan'] ?? [];
+        $healthTips = $nutrition->nutrition_plan['tips'] ?? '';
 
         $pdf = Pdf::loadView('nutrition.export', compact('nutrition', 'nutritionPlan', 'healthTips'));
         return $pdf->download('nutrition_plan.pdf');
     }
+
     public function exportDoc($id)
     {
         $nutrition = NutritionInput::findOrFail($id);
-        $parsed = $this->parseNutritionPlan($nutrition->nutrition_plan);
-        $nutritionPlan = $parsed['plan']; // Adjust according to your data
-        $healthTips =  $parsed['tips']; // Adjust if needed
+        $nutritionPlan = $nutrition->nutrition_plan['plan'] ?? [];
+        $healthTips = $nutrition->nutrition_plan['tips'] ?? '';
 
         $html = view('nutrition.export', compact('nutrition', 'nutritionPlan', 'healthTips'))->render();
 
@@ -365,71 +255,61 @@ class NutritionController extends Controller
             ->header('Content-Type', 'application/msword')
             ->header('Content-Disposition', 'attachment; filename="nutrition_plan.doc"');
     }
-    //for editing plain data
+
+    //foset data in day wise edit field
     public function editDay($id, $day)
     {
         $nutrition = NutritionInput::findOrFail($id);
-        $parsed = $this->parseNutritionPlan($nutrition->nutrition_plan);
-        $dayKey = "Day $day";
-        // dd($meals);
+        $nutritionPlan = $nutrition->nutrition_plan;
+
+        $meals = [];
+
+        // Find the specific day's data from the JSON structure
+        foreach ($nutritionPlan['plan'] as $entry) {
+            if ($entry['day'] == $day) {
+                foreach ($entry['meals'] as $mealEntry) {
+                    foreach ($mealEntry as $mealType => $items) {
+                        $meals[$mealType] = $items;
+                    }
+                }
+                break;
+            }
+        }
+
         return view('nutrition.edit-day', [
             'day' => $day,
-            'meals' => $parsed['plan'][$dayKey] ?? [],
-            'nutritionId' => $id
+            'meals' => $meals,
+            'nutritionId' => $id,
         ]);
     }
-
-    private function rebuildRawText(string $intro, array $plan, string $tips): string
-    {
-        $text = trim($intro) . "\n\n";
-
-        foreach ($plan as $day => $meals) {
-            $text .= "$day:\n";
-            foreach ($meals as $mealType => $items) {
-                foreach ($items as $item) {
-                    $text .= "- $mealType: $item\n";
-                }
-            }
-            $text .= "\n";
-        }
-
-        if (!empty($tips)) {
-            $text .= trim($tips);
-        }
-
-        return trim($text);
-    }
+    //update day wise data
     public function updateDay(Request $request, $id, $day)
     {
         $nutrition = NutritionInput::findOrFail($id);
-        $rawText = $nutrition->nutrition_plan;
+        $nutritionPlan = $nutrition->nutrition_plan;
 
-        $parsed = $this->parseNutritionPlan($rawText);
-        $dayKey = "Day $day";
-
-        // Update only the selected day
         $updatedMeals = [];
         foreach ($request->input('meals') as $mealType => $items) {
-            $items = array_filter($items);
-            $updatedMeals[$mealType] = $items;
+            $cleanedItems = array_filter(array_map('trim', $items));
+            if (!empty($cleanedItems)) {
+                $updatedMeals[] = [
+                    $mealType => $cleanedItems
+                ];
+            }
         }
 
-        // Replace Day X
-        $parsed['plan'][$dayKey] = $updatedMeals;
-
-        // Extract dynamic intro from raw text
-        $intro = '';
-        if (preg_match('/^(.*?)(?=\nDay\s*1:)/is', $rawText, $introMatch)) {
-            $intro = trim($introMatch[1]);
+        // Update only the selected day in the plan array
+        foreach ($nutritionPlan['plan'] as &$entry) {
+            if ($entry['day'] == $day) {
+                $entry['meals'] = $updatedMeals;
+                break;
+            }
         }
 
-        // Rebuild full raw text
-        $newRawText = $this->rebuildRawText($intro, $parsed['plan'], $parsed['tips']);
-
-        $nutrition->nutrition_plan = $newRawText;
-        // dd($newRawText);
+        $nutrition->nutrition_plan = $nutritionPlan;
         $nutrition->save();
 
-        return redirect()->route('nutrition.show', $nutrition->id)->with('success', "Day $day updated successfully.");
+        return redirect()->route('nutrition.show', $nutrition->id)
+            ->with('success', "Day $day updated successfully.");
     }
 }

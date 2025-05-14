@@ -1,6 +1,7 @@
 @extends('layouts.master')
 @section('title', 'Nutrition Planner')
 @section('content')
+
 <div class="container mt-5">
     <div class="details-container">
         <h2 class="text-center text-xl font-semibold">{{ $nutrition->plan_duration }} days plan for {{ $nutrition->name }}</h2>
@@ -54,59 +55,44 @@
             @endforeach
             </div>
         </div>
-
 <!-- Nutrition Plan -->
 <div class="mb-4">
     <p class="font-semibold text-lg">Personalized Nutrition Plan</p>
     <p><strong>Based on your input, here is a personalized diet plan:</strong></p>
 
-    @foreach($nutritionPlan as $day => $meals)
-    <div class="flex items-center justify-between bg-blue-100 text-blue-800 py-2 px-4 mt-4 mb-2">
-        <h6 class="text-lg font-semibold">{{ $day }}</h6>
-        <a href="{{ route('nutrition.editDay', ['id' => $nutrition->id, 'day' => Str::after($day, 'Day ')]) }}"
-           class="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">
-            Edit
-        </a>
-    </div>
+    @foreach($nutritionPlan as $dayData)
+        <div class="flex items-center justify-between bg-blue-100 text-blue-800 py-2 px-4 mt-4 mb-2">
+            <h6 class="text-lg font-semibold">Day {{ $dayData['day'] }}</h6>
+            <a href="{{ route('nutrition.editDay', ['id' => $nutrition->id, 'day' => $dayData['day']]) }}"
+               class="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">
+                Edit
+            </a>
+        </div>
+
         <ul class="space-y-2">
-            @foreach($meals as $mealType => $items)
-                <li class="bg-gray-100 p-2 rounded">
-                    <strong>{{ getMealEmoji($mealType) }} {{ $mealType }}</strong>
-                    <ul class="list-disc pl-6">
-                        @foreach($items as $item)
-                            <li>{{ $item }}</li>
-                        @endforeach
-                    </ul>
-                </li>
+            @foreach($dayData['meals'] as $mealEntry)
+                @foreach($mealEntry as $mealType => $items)
+                    <li class="bg-gray-100 p-2 rounded">
+                        <strong>{{ getMealEmoji($mealType) }} {{ $mealType }}</strong>
+                        <ul class="list-disc pl-6">
+                            @foreach($items as $item)
+                                <li>{{ $item }}</li>
+                            @endforeach
+                        </ul>
+                    </li>
+                @endforeach
             @endforeach
         </ul>
     @endforeach
 </div>
-{{-- <div class="mb-4">
-    <p class="font-semibold text-lg">Personalized Nutrition Plan</p>
-    <p><strong>Based on your input, here is a personalized diet plan:</strong></p>
 
-    @foreach($nutritionPlan as $day => $meals)
-        <h6 class="text-center bg-blue-100 text-blue-800 py-2 mt-4 mb-2">{{ $day }}</h6>
-        <ul class="space-y-2">
-            @foreach($meals as $mealType => $items)
-                <li class="bg-gray-100 p-2 rounded">
-                    <strong>{{ getMealEmoji($mealType) }} {{ $mealType }}</strong>
-                    <ul class="list-disc pl-6">
-                        @foreach($items as $item)
-                            <li>{{ $item }}</li>
-                        @endforeach
-                    </ul>
-                </li>
-            @endforeach
-        </ul>
-    @endforeach
-</div> --}}
+<!-- Health Tips -->
+@if($healthTips)
+    <div class="bg-blue-100 p-4 rounded text-blue-800 mt-6">
+        <strong>💡 Health Tips:</strong> {{ $healthTips }}
+    </div>
+@endif
 
-        <!-- Health Tips -->
-        <div class="bg-blue-100 p-4 rounded text-blue-800">
-            <strong>💡 Health Tips:</strong> {{ $healthTips }}
-        </div> 
     
 
         <!-- Edit & Print Buttons -->

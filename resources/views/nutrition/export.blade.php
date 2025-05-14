@@ -4,15 +4,16 @@
     <meta charset="utf-8">
     <title>Nutrition Plan</title>
     <style>
-        body { font-family: sans-serif; }
-        h2 { text-align: center; }
+        body { font-family: sans-serif; line-height: 1.6; }
+        h2, h4 { text-align: center; }
         ul { margin-left: 20px; }
-        .section-title { font-weight: bold; margin-top: 20px; }
+        .section-title { font-weight: bold; margin-top: 20px; font-size: 18px; }
+        .day-heading { margin-top: 15px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <h2>{{ $nutrition->plan_duration }} days plan for {{ $nutrition->name }}</h2>
+    <h2>{{ $nutrition->plan_duration }} Days Nutrition Plan for {{ $nutrition->name }}</h2>
 
     <div>
         <p class="section-title">Personal Information</p>
@@ -24,7 +25,7 @@
         <p>Duration: {{ $nutrition->plan_duration }} days</p>
         <p>Goal: {{ $nutrition->goal }}</p>
         <p>Diet Type: {{ $nutrition->diet_type }}</p>
-        <p>Meals Per Day: {{ $nutrition->meals_per_day }} Times</p>
+        <p>Meals Per Day: {{ $nutrition->meals_per_day }} times</p>
     </div>
 
     <div>
@@ -47,20 +48,20 @@
 
     <div>
         <p class="section-title">Personalized Nutrition Plan</p>
-        <p><strong>Based on your input, here is a personalized diet plan:</strong></p>
-
-        @foreach($nutritionPlan as $day => $meals)
-            <h4>{{ $day }}</h4>
+        @foreach($nutritionPlan as $dayEntry)
+            <p class="day-heading">Day {{ $dayEntry['day'] }}</p>
             <ul>
-                @foreach($meals as $mealType => $items)
-                    <li>
-                        <strong>{{ $mealType }}</strong>
-                        <ul>
-                            @foreach($items as $item)
-                                <li>{{ $item }}</li>
-                            @endforeach
-                        </ul>
-                    </li>
+                @foreach($dayEntry['meals'] as $meal)
+                    @foreach($meal as $mealType => $items)
+                        <li>
+                            <strong>{{ ucfirst($mealType) }}</strong>
+                            <ul>
+                                @foreach($items as $item)
+                                    <li>{{ $item }}</li>
+                                @endforeach
+                            </ul>
+                        </li>
+                    @endforeach
                 @endforeach
             </ul>
         @endforeach

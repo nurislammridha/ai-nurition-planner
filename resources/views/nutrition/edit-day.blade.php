@@ -10,7 +10,10 @@
 
             @foreach($meals as $mealType => $items)
                 <div>
-                    <label class="block text-lg font-semibold text-gray-800 mb-2">{{ ucfirst($mealType) }}</label>
+                    <label class="block text-lg font-semibold text-gray-800 mb-2">
+                        {{ getMealEmoji($mealType) }} {{ ucfirst($mealType) }}
+                    </label>
+
                     @foreach($items as $index => $item)
                         <textarea
                             name="meals[{{ $mealType }}][]"
@@ -26,11 +29,10 @@
                     type="submit"
                     class="bg-primary-800 hover:bg-green-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-all duration-200"
                 >
-                     Save Changes
+                    Save Changes
                 </button>
             </div>
         </form>
     </div>
 </div>
 @endsection
-

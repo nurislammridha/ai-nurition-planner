@@ -35,3 +35,29 @@ function getMealEmoji($type)
         default => '🍴'
     };
 }
+/**
+ * Clean and convert a ChatGPT JSON string (possibly wrapped in markdown) to a PHP array.
+ *
+ * @param string $stringifiedJson
+ * @return array|null
+ */
+function parseChatGptNutritionPlan(string $stringifiedJson): ?array
+{
+    // Remove markdown code fences and language identifier like ```json
+    $cleaned = preg_replace('/^```json|```$/m', '', $stringifiedJson);
+
+    // Trim whitespace and extra quotes
+    $cleaned = trim($cleaned, "\" \n\r\t\v\0");
+
+    // Decode the cleaned JSON
+    $data = json_decode($cleaned, true);
+
+    // Return null on failure
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        // Optional: Log the error
+        // Log::error('JSON decode error: ' . json_last_error_msg());
+        return null;
+    }
+
+    return $data;
+}
