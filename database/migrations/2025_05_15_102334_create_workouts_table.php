@@ -27,7 +27,7 @@ return new class extends Migration
             $table->string('stress_level');
             $table->string('sleep_quality');
             $table->string('plan_duration');
-            $table->text('workout_plan')->nullable();
+            $table->json('workout_plan')->nullable();
             $table->json('injuries_health_conditions')->nullable();
             $table->json('available_equipments')->nullable();
             $table->timestamps();

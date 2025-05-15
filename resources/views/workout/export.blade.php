@@ -1,3 +1,4 @@
+<!-- workout/export.blade.php -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -5,14 +6,14 @@
     <title>Workout Plan</title>
     <style>
         body { font-family: sans-serif; }
-        h2 { text-align: center; }
-        ul { margin-left: 20px; }
+        h2, h3, h4 { text-align: left; }
+        ul { margin-left: 20px; padding-left: 15px; }
         .section-title { font-weight: bold; margin-top: 20px; }
     </style>
 </head>
 <body>
 
-    <h2>{{ $workout->plan_duration }} days workout plan for {{ $workout->name }}</h2>
+    <h2>{{ $workout->plan_duration }}-Day Workout Plan for {{ $workout->name }}</h2>
 
     <div>
         <p class="section-title">Personal Information</p>
@@ -21,7 +22,6 @@
         <p>Gender: {{ ucfirst($workout->gender) }}</p>
         <p>Height: {{ $workout->height }} cm</p>
         <p>Weight: {{ $workout->weight }} kg</p>
-        <p>Plan Duration: {{ $workout->plan_duration }} days</p>
         <p>Fitness Goal: {{ $workout->fitness_goals }}</p>
         <p>Training Level: {{ $workout->training_level }}</p>
         <p>Training Style: {{ $workout->preferred_training_style }}</p>
@@ -32,54 +32,82 @@
         <p>Sleep Quality: {{ $workout->sleep_quality }}</p>
     </div>
 
-    <div>
-        <p class="section-title">Injures Health Conditions</p>
-        <ul>
-            @foreach($workout->injuries_health_conditions as $condition)
-                <li>{{ $condition }}</li>
-            @endforeach
-        </ul>
-    </div>
-
-    <div>
-        <p class="section-title">Available Equipments</p>
-        <ul>
-            @foreach($workout->available_equipments as $available_equipment)
-                <li>{{ $available_equipment }}</li>
-            @endforeach
-        </ul>
-    </div>
-
-   
-<div class="mb-4">
-    <p class="font-semibold text-lg">Personalized Workout Plan</p>
-    <p><strong>Based on your input, here is a personalized workout plan:</strong></p>
-
-    @foreach($workoutPlan as $day => $sections)
-        <div class="flex items-center justify-between bg-blue-100 text-blue-800 py-2 px-4 mt-4 mb-2">
-            <h2 class="text-lg font-semibold">{{ $day }}</h6>
-           
+    @if (!empty($workout->injuries_health_conditions))
+        <div>
+            <p class="section-title">Injuries or Health Conditions</p>
+            <ul>
+                @foreach($workout->injuries_health_conditions as $condition)
+                    <li>{{ $condition }}</li>
+                @endforeach
+            </ul>
         </div>
+    @endif
 
-        <ul class="space-y-2">
-            @foreach($sections as $sectionTitle => $items)
-                <li class="bg-gray-100 p-2 rounded">
-                    <strong>{{ $sectionTitle }}</strong>
-                    <ul class="list-disc pl-6">
-                        @foreach($items as $item)
-                            <li>{{ $item }}</li>
-                        @endforeach
-                    </ul>
-                </li>
-            @endforeach
-        </ul>
-    @endforeach
-</div>
+    @if (!empty($workout->available_equipments))
+        <div>
+            <p class="section-title">Available Equipments</p>
+            <ul>
+                @foreach($workout->available_equipments as $available_equipment)
+                    <li>{{ $available_equipment }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 
-        <!-- Health Tips -->
-        <div class="bg-blue-100 p-4 rounded text-blue-800">
-            <strong>💡 Health Tips:</strong> {{ $healthTips }}
-        </div> 
+    <div>
+        <p class="section-title">Personalized Workout Plan</p>
+      @foreach($workoutPlan['plan'] as $dayPlan)
+    <div style="background-color: #bfdbfe; padding: 10px; margin-top: 20px;">
+        <h2>{{ $dayPlan['day'] }}</h2>
+    </div>
+
+    <ul>
+        @php
+            // The workout is a flat array of strings, some with section headers like "**Warm-Up (5 minutes):**"
+            $currentSection = null;
+            $sections = [];
+        @endphp
+
+        @foreach($dayPlan['workout'] as $line)
+            @if(str_starts_with($line, '**') && str_ends_with($line, '**'))
+                @php
+                    // Extract section title without ** and ::: or : characters
+                    $currentSection = trim(str_replace(['**', ':::','**:','**'], '', $line));
+                    $sections[$currentSection] = [];
+                @endphp
+            @else
+                @if($currentSection)
+                    @php
+                        $sections[$currentSection][] = $line;
+                    @endphp
+                @else
+                    {{-- If no section, just put it under "General" --}}
+                    @php
+                        $sections['General'][] = $line;
+                    @endphp
+                @endif
+            @endif
+        @endforeach
+
+        @foreach($sections as $sectionTitle => $items)
+            <li>
+                <strong>{{ $sectionTitle }}</strong>
+                <ul>
+                    @foreach($items as $item)
+                        <li>{{ $item }}</li>
+                    @endforeach
+                </ul>
+            </li>
+        @endforeach
+    </ul>
+@endforeach
+
+    </div>
+
+    <div>
+        <p class="section-title"> Health Tips</p>
+        <p>{{ $workoutPlan['tips'] }}</p>
+    </div>
 
 </body>
 </html>

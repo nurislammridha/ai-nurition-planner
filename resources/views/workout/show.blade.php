@@ -1,6 +1,7 @@
 @extends('layouts.master')
 @section('title', 'Workout Planner')
 @section('content')
+{{-- @dd($workoutPlan) --}}
 <div class="container mt-5">
     <div class="details-container">
         <h2 class="text-center text-xl font-semibold">{{ $workout->plan_duration }} days workout plan for {{ $workout->name }}</h2>
@@ -58,35 +59,58 @@
 
 <!-- workout Plan -->
 
-<div class="mb-4">
-    <p class="font-semibold text-lg">Personalized Workout Plan</p>
-    <p><strong>Based on your input, here is a personalized workout plan:</strong></p>
+<div class="mb-6">
+    <p class="font-semibold text-2xl mb-2">Personalized Workout Plan</p>
+    <p class="mb-4 text-gray-700"><strong>Based on your input, here is your customized workout schedule:</strong></p>
 
-    @foreach($workoutPlan as $day => $sections)
-        <div class="flex items-center justify-between bg-blue-100 text-blue-800 py-2 px-4 mt-4 mb-2">
-            <h6 class="text-lg font-semibold">{{ $day }}</h6>
-            @if(Str::startsWith($day, 'Day '))
-            <a href="{{ route('workout.editDay', ['id' => $workout->id, 'day' => Str::after($day, 'Day ')]) }}"
-               class="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">
-                Edit
-            </a>
-            @endif
+    @foreach($workoutPlan as $dayData)
+        <div class="mb-6 border border-blue-200 rounded-lg overflow-hidden shadow-sm">
+            <div class="flex items-center justify-between bg-blue-100 text-blue-800 px-4 py-2">
+                <h6 class="text-lg font-semibold">{{ $dayData['day'] }}</h6>
+                @if(Str::startsWith($dayData['day'], 'Day '))
+                    <a href="{{ route('workout.editDay', ['id' => $workout->id, 'day' => Str::after($dayData['day'], 'Day ')]) }}"
+                       class="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">
+                        Edit
+                    </a>
+                @endif
+            </div>
+
+            <div class="p-4 bg-white space-y-4">
+                @if(count($dayData['workout']) === 1 && strtolower($dayData['workout'][0]) === 'rest day')
+                    <div class="bg-yellow-50 text-yellow-800 p-4 rounded text-center font-semibold">
+                        🛌 Rest Day – Take time to recover and relax!
+                    </div>
+                @else
+                    @php
+                        $sections = [];
+                        $currentSection = null;
+
+                        foreach ($dayData['workout'] as $item) {
+                            if (Str::startsWith($item, '**') && Str::endsWith($item, '**')) {
+                                $currentSection = trim($item, '** ');
+                                $sections[$currentSection] = [];
+                            } elseif ($currentSection) {
+                                $sections[$currentSection][] = $item;
+                            }
+                        }
+                    @endphp
+
+                    @foreach($sections as $sectionTitle => $items)
+                        <div class="bg-gray-50 p-3 rounded border border-gray-200">
+                            <h4 class="font-semibold text-blue-700 mb-2">{{ $sectionTitle }}</h4>
+                            <ul class="list-disc list-inside space-y-1 text-gray-800">
+                                @foreach($items as $item)
+                                    <li>{{ $item }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endforeach
+                @endif
+            </div>
         </div>
-
-        <ul class="space-y-2">
-            @foreach($sections as $sectionTitle => $items)
-                <li class="bg-gray-100 p-2 rounded">
-                    <strong>{{ $sectionTitle }}</strong>
-                    <ul class="list-disc pl-6">
-                        @foreach($items as $item)
-                            <li>{{ $item }}</li>
-                        @endforeach
-                    </ul>
-                </li>
-            @endforeach
-        </ul>
     @endforeach
 </div>
+
 
         <!-- Health Tips -->
         <div class="bg-blue-100 p-4 rounded text-blue-800">

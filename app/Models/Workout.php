@@ -32,5 +32,6 @@ class Workout extends Model
     protected $casts = [
         'injuries_health_conditions' => 'array',
         'available_equipments' => 'array',
+        'workout_plan' => 'array',
     ];
 }

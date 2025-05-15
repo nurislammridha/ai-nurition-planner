@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Str;
 
 class WorkoutController extends Controller
 {
@@ -71,13 +72,36 @@ class WorkoutController extends Controller
                         "Sleep Quality: {$request->sleep_quality}\n" .
                         "Injuries/Health Conditions: " . implode(', ', $request->injuries_health_conditions ?? []) . "\n" .
                         "Available Equipment: " . implode(', ', $request->available_equipments ?? []) . "\n\n" .
-                        "⚠️ IMPORTANT:\n" .
-                        "- Ensure the plan includes different exercises each day for {$request->plan_duration} days.\n" .
-                        "- Suggest warm-up and cool-down for each session.\n" .
-                        "- Tailor exercises based on training level and injuries.\n" .
-                        "- ONLY use the listed available equipment.\n" .
-                        "- Do NOT repeat workouts. Each day must be unique.\n" .
-                        "- Include brief rest guidance on non-training days if applicable."
+                        "⚠️ VERY IMPORTANT:\n" .
+                        "- Respond ONLY with valid pure JSON format wrapped inside triple backticks (```).\n" .
+                        "- Do NOT include any explanation or text before or after the JSON.\n" .
+                        "- The JSON structure must match this format:\n\n" .
+
+                        "```json\n" .
+                        "{\n" .
+                        "  \"training_days_per_week\": {$request->training_days_per_week},\n" .
+                        "  \"plan_duration\": {$request->plan_duration},\n" .
+                        "  \"plan\": [\n" .
+                        "    {\n" .
+                        "      \"day\": \"Day 1\",\n" .
+                        "      \"workout\": [\n" .
+                        "        \"**Warm-Up (5 minutes):**\",\n" .
+                        "        \"Exercise A\",\n" .
+                        "        \"Exercise B\",\n" .
+                        "        \"...\",\n" .
+                        "        \"**Workout (40 minutes):**\",\n" .
+                        "        \"Exercise X\",\n" .
+                        "        \"...\",\n" .
+                        "        \"**Cool-Down (5 minutes):**\",\n" .
+                        "        \"Stretch A\",\n" .
+                        "        \"...\"\n" .
+                        "      ]\n" .
+                        "    },\n" .
+                        "    ... (Repeat for {$request->plan_duration} days)\n" .
+                        "  ],\n" .
+                        "  \"tips\": \"Final safety and motivation tips.\"\n" .
+                        "}\n" .
+                        "```"
                 ]
             ],
             'temperature' => 0.7
@@ -89,8 +113,8 @@ class WorkoutController extends Controller
         } else {
             $plan = 'Error: ' . $openaiResponse->status() . ' - ' . $openaiResponse->body();
         }
-        // dd($plan);
-        // dd($openaiResponse);
+        $planJson = parseChatGptNutritionPlan($plan);
+
         Workout::create([
             'name' => $request->name,
             'age' => $request->age,
@@ -108,7 +132,7 @@ class WorkoutController extends Controller
             'injuries_health_conditions' => $request->injuries_health_conditions,
             'available_equipments' => $request->available_equipments,
             'plan_duration' => $request->plan_duration,
-            'workout_plan' => $plan,
+            'workout_plan' => $planJson,
         ]);
 
         return redirect()->route('workout.index')->with('success', 'Workout plan created successfully!');
@@ -116,13 +140,9 @@ class WorkoutController extends Controller
 
     public function show(Workout $workout)
     {
-        $parsed = $this->parseWorkoutPlan($workout->workout_plan);
-        // @dd($parsed['plan']);
-        return view('workout.show', [
-            'workout' => $workout,
-            'workoutPlan' => $parsed['plan'],
-            'healthTips' => $parsed['tips']
-        ]);
+        $workoutPlan = $workout->workout_plan['plan'] ?? [];
+        $healthTips = $workout->workout_plan['tips'] ?? null;
+        return view('workout.show', compact('workout', 'workoutPlan', 'healthTips'));
     }
     private function parseWorkoutPlan($rawText)
     {
@@ -198,71 +218,6 @@ class WorkoutController extends Controller
         ];
     }
 
-    // private function parseWorkoutPlan($rawText)
-    // {
-    //     $parsedPlan = [];
-    //     $tips = '';
-    //     $inTips = false;
-
-    //     // Clean and normalize the text
-    //     $rawText = preg_replace('/\*\*(.*?)\*\*/', '**$1**', $rawText); // Normalize bold
-    //     $rawText = preg_replace('/\r\n|\r/', "\n", $rawText);           // Normalize line endings
-
-    //     // Match each day's block (including Active Recovery, etc.)
-    //     preg_match_all('/\*\*Day\s*(\d+):\s*(.*?)\*\*\n([\s\S]*?)(?=(\*\*Day\s*\d+:|\*\*|$))/i', $rawText, $matches, PREG_SET_ORDER);
-
-    //     foreach ($matches as $match) {
-    //         $dayNumber = (int)trim($match[1]);
-    //         $dayTitle = 'Day ' . $dayNumber . ': ' . trim($match[2]);
-    //         $content = trim($match[3]);
-
-    //         $sections = [];
-    //         $currentSection = null;
-
-    //         $lines = preg_split("/\n/", $content);
-
-    //         foreach ($lines as $line) {
-    //             $line = trim($line);
-    //             if (empty($line)) continue;
-
-    //             if (preg_match('/^(Warm-up|Cool[- ]?down|Workout|Dynamic Warm-up|Stretching|Recovery):?/i', $line, $sectionMatch)) {
-    //                 $currentSection = ucfirst(strtolower($sectionMatch[1]));
-    //                 $sections[$currentSection] = [];
-    //             } elseif (preg_match('/^[\d\-\•]+[\.\)]?\s*/', $line) || $currentSection) {
-    //                 // If it's a bullet/numbered item or already inside a section
-    //                 if (!$currentSection) {
-    //                     $currentSection = 'Workout'; // Default section if none is found
-    //                     $sections[$currentSection] = [];
-    //                 }
-    //                 $sections[$currentSection][] = $line;
-    //             } else {
-    //                 // If it’s standalone info (like on Day 7)
-    //                 $sections['Info'][] = $line;
-    //             }
-    //         }
-
-    //         $parsedPlan["Day $dayNumber"] = $sections;
-    //     }
-
-    //     // Handle health tips from end of raw text
-    //     $lines = preg_split("/\n/", $rawText);
-    //     foreach ($lines as $line) {
-    //         $line = trim($line);
-    //         if (preg_match('/^(Tips|Remember|Stay|Adjust|Focus|Ensure|Listen|Consult|Engage|Hydrate|Rest|Aim)\b/i', $line)) {
-    //             $inTips = true;
-    //         }
-
-    //         if ($inTips) {
-    //             $tips .= $line . ' ';
-    //         }
-    //     }
-
-    //     return [
-    //         'plan' => $parsedPlan,
-    //         'tips' => trim($tips),
-    //     ];
-    // }
-
 
     //edit
     public function edit(Workout $workout)
@@ -291,7 +246,7 @@ class WorkoutController extends Controller
         ]);
 
         $openaiResponse = Http::withHeaders([
-            'Authorization' => 'Bearer ' . env('OPENAI_API_KEY'),
+            'Authorization' => 'Bearer ' . env('OPENAI_API_KEY_WORKOUT'),
             'Content-Type' => 'application/json',
         ])->post('https://api.openai.com/v1/chat/completions', [
             'model' => 'gpt-4o-mini',
@@ -320,13 +275,36 @@ class WorkoutController extends Controller
                         "Sleep Quality: {$request->sleep_quality}\n" .
                         "Injuries/Health Conditions: " . implode(', ', $request->injuries_health_conditions ?? []) . "\n" .
                         "Available Equipment: " . implode(', ', $request->available_equipments ?? []) . "\n\n" .
-                        "⚠️ IMPORTANT:\n" .
-                        "- Ensure the plan includes different exercises each day for {$request->plan_duration} days.\n" .
-                        "- Suggest warm-up and cool-down for each session.\n" .
-                        "- Tailor exercises based on training level and injuries.\n" .
-                        "- ONLY use the listed available equipment.\n" .
-                        "- Do NOT repeat workouts. Each day must be unique.\n" .
-                        "- Include brief rest guidance on non-training days if applicable."
+                        "⚠️ VERY IMPORTANT:\n" .
+                        "- Respond ONLY with valid pure JSON format wrapped inside triple backticks (```).\n" .
+                        "- Do NOT include any explanation or text before or after the JSON.\n" .
+                        "- The JSON structure must match this format:\n\n" .
+
+                        "```json\n" .
+                        "{\n" .
+                        "  \"training_days_per_week\": {$request->training_days_per_week},\n" .
+                        "  \"plan_duration\": {$request->plan_duration},\n" .
+                        "  \"plan\": [\n" .
+                        "    {\n" .
+                        "      \"day\": \"Day 1\",\n" .
+                        "      \"workout\": [\n" .
+                        "        \"**Warm-Up (5 minutes):**\",\n" .
+                        "        \"Exercise A\",\n" .
+                        "        \"Exercise B\",\n" .
+                        "        \"...\",\n" .
+                        "        \"**Workout (40 minutes):**\",\n" .
+                        "        \"Exercise X\",\n" .
+                        "        \"...\",\n" .
+                        "        \"**Cool-Down (5 minutes):**\",\n" .
+                        "        \"Stretch A\",\n" .
+                        "        \"...\"\n" .
+                        "      ]\n" .
+                        "    },\n" .
+                        "    ... (Repeat for {$request->plan_duration} days)\n" .
+                        "  ],\n" .
+                        "  \"tips\": \"Final safety and motivation tips.\"\n" .
+                        "}\n" .
+                        "```"
                 ]
             ],
             'temperature' => 0.7
@@ -338,19 +316,9 @@ class WorkoutController extends Controller
         } else {
             $plan = 'Error: ' . $openaiResponse->status() . ' - ' . $openaiResponse->body();
         }
+        $planJson = parseChatGptNutritionPlan($plan);
         //save to db
-        $workout->update([
-            'age' => $request->age,
-            'height' => $request->height,
-            'weight' => $request->weight,
-            'gender' => $request->gender,
-            'goal' => $request->goal,
-            'meals_per_day' => $request->meals_per_day,
-            'diet_type' => $request->diet_type,
-            'health_conditions' => $request->health_conditions,
-            'allergies' => $request->allergies,
-            'nutrition_plan' => $plan
-        ]);
+
         $workout->update([
             'name' => $request->name,
             'age' => $request->age,
@@ -368,7 +336,7 @@ class WorkoutController extends Controller
             'injuries_health_conditions' => $request->injuries_health_conditions,
             'available_equipments' => $request->available_equipments,
             'plan_duration' => $request->plan_duration,
-            'workout_plan' => $plan,
+            'workout_plan' => $planJson,
         ]);
         // return view('nutrition', compact('plan'));
         return redirect()->route('workout.index')->with('success', 'Workout Plan updated successfully!');
@@ -379,162 +347,105 @@ class WorkoutController extends Controller
         $workout->delete();
         return redirect()->route('workout.index')->with('success', 'Workout plan deleted successfully');
     }
+
     public function exportPdf($id)
     {
         $workout = Workout::findOrFail($id);
-        $parsed = $this->parseWorkoutPlan($workout->workout_plan);
-        $workoutPlan = $parsed['plan']; // Adjust according to your data
-        $healthTips =  $parsed['tips']; // Adjust if needed
 
-        $pdf = Pdf::loadView('workout.export', compact('workout', 'workoutPlan', 'healthTips'));
+        // workout_plan is already an array due to cast
+        $workoutPlan = $workout->workout_plan;
+        $healthTips = $workout->health_tips;
+
+        $pdf = Pdf::loadView('workout.export', compact('workout', 'workoutPlan', 'healthTips'))
+            ->setPaper('a4')
+            ->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+            ]);
+
         return $pdf->download('workout_plan.pdf');
     }
+
     public function exportDoc($id)
     {
         $workout = Workout::findOrFail($id);
-        $parsed = $this->parseWorkoutPlan($workout->workout_plan);
-        $workoutPlan = $parsed['plan']; // Adjust according to your data
-        $healthTips =  $parsed['tips']; // Adjust if needed
+
+        // workout_plan is already an array due to cast
+        $workoutPlan = $workout->workout_plan;
+        $healthTips = $workout->health_tips;
 
         $html = view('workout.export', compact('workout', 'workoutPlan', 'healthTips'))->render();
 
         return response($html)
-            ->header('Content-Type', 'application/msword')
+            ->header('Content-Type', 'application/vnd.ms-word')
             ->header('Content-Disposition', 'attachment; filename="workout_plan.doc"');
     }
+
+
+
     //for editing plain data
     public function editDay($id, $day)
     {
         $workout = Workout::findOrFail($id);
-        $parsed = $this->parseWorkoutPlan($workout->workout_plan);
         $dayKey = "Day $day";
-        // dd($parsed['plan'][$dayKey] ?? []);
-        return view('workout.edit-day', [
-            'day' => $day,
-            'meals' => $parsed['plan'][$dayKey] ?? [],
-            'workoutId' => $id
-        ]);
-    }
-    // function rebuildRawText($originalText, $dayTitle, $updatedWorkoutArray)
-    // {
-    //     // Split using regex to capture all day blocks
-    //     $pattern = '/\*\*(Day\s\d+:.*)\*\*/';
-    //     preg_match_all($pattern, $originalText, $matches, PREG_OFFSET_CAPTURE);
 
-    //     $sections = [];
-    //     $total = count($matches[0]);
+        $dayPlan = collect($workout->workout_plan['plan'])
+            ->firstWhere('day', $dayKey);
 
-    //     for ($i = 0; $i < $total; $i++) {
-    //         $titleText = $matches[1][$i][0]; // example: Day 1: Full Body Dumbbell Workout
-    //         $startPos = $matches[0][$i][1];
-    //         $endPos = ($i + 1 < $total) ? $matches[0][$i + 1][1] : strlen($originalText);
-    //         $content = substr($originalText, $startPos, $endPos - $startPos);
+        $meals = [];
 
-    //         $sections[] = [
-    //             'title' => $titleText,
-    //             'content' => $content,
-    //         ];
-    //     }
+        if ($dayPlan && isset($dayPlan['workout']) && count($dayPlan['workout']) === 1 && strtolower($dayPlan['workout'][0]) === 'rest day') {
+            $meals = ['rest' => ['Rest Day']];
+        } else {
+            $currentSection = null;
 
-    //     // Rebuild content
-    //     $rebuilt = '';
-    //     foreach ($sections as $section) {
-    //         if (trim($section['title']) === trim($dayTitle)) {
-    //             $newContent = "**{$dayTitle}**\n";
-
-    //             $counter = 1;
-    //             $currentSection = '';
-
-    //             foreach ($updatedWorkoutArray as $line) {
-    //                 $trimmed = trim($line);
-
-    //                 if (str_ends_with($trimmed, ':')) {
-    //                     $currentSection = strtolower(rtrim($trimmed, ':'));
-    //                     $newContent .= "- {$trimmed}\n";
-    //                     $counter = 1;
-    //                 } elseif ($currentSection === 'workout') {
-    //                     $newContent .= "{$counter}. {$trimmed}\n";
-    //                     $counter++;
-    //                 } else {
-    //                     $newContent .= "{$trimmed}\n";
-    //                 }
-    //             }
-
-    //             $rebuilt .= $newContent . "\n\n";
-    //         } else {
-    //             $rebuilt .= $section['content'] . "\n\n";
-    //         }
-    //     }
-
-    //     return trim($rebuilt);
-    // }
-
-
-
-    private function rebuildRawText(string $intro, array $plan, string $tips): string
-    {
-        $text = trim($intro) . "\n\n";
-
-        foreach ($plan as $day => $sections) {
-            // Day line: **Day 1: Title**
-            $text .= "**{$day}:**\n\n";
-
-            // If this day has only one string (like Day 4 with a single line of rest text)
-            if (isset($sections['Info']) && is_array($sections['Info'])) {
-                foreach ($sections['Info'] as $line) {
-                    $text .= "{$line}\n";
+            foreach ($dayPlan['workout'] as $item) {
+                if (Str::startsWith($item, '**') && Str::endsWith($item, '**')) {
+                    $currentSection = trim($item, '** ');
+                    $meals[$currentSection] = [];
+                } elseif ($currentSection) {
+                    $meals[$currentSection][] = $item;
                 }
-                $text .= "\n";
-                continue;
-            }
-
-            foreach ($sections as $sectionTitle => $items) {
-                // Example: 1. Warm-up:
-                $text .= "{$sectionTitle}:\n";
-                foreach ($items as $item) {
-                    $text .= "{$item}\n";
-                }
-                $text .= "\n";
             }
         }
 
-        // Append final reminder tips (if exists)
-        if (!empty(trim($tips))) {
-            $text .= trim($tips);
-        }
-
-        return trim($text);
+        return view('workout.edit-day', compact('day', 'meals', 'workout'));
     }
 
     public function updateDay(Request $request, $id, $day)
     {
         $workout = Workout::findOrFail($id);
-        $rawText = $workout->workout_plan;
-
-        $parsed = $this->parseWorkoutPlan($rawText);
         $dayKey = "Day $day";
 
-        // Update only the selected day
-        $updatedMeals = [];
-        foreach ($request->input('meals') as $mealType => $items) {
-            $items = array_filter($items);
-            $updatedMeals[$mealType] = $items;
+        $raw = $workout->workout_plan;
+
+        // Parse the full JSON directly
+        $fullPlan = is_array($raw) ? $raw : json_decode($raw, true);
+
+        // Rebuild this day only
+        $updatedDayWorkout = [];
+
+        foreach ($request->input('meals') as $section => $items) {
+            $sectionTitle = "**" . trim($section) . "**";
+            $updatedDayWorkout[] = $sectionTitle;
+
+            foreach ($items as $item) {
+                if (trim($item) !== '') {
+                    $updatedDayWorkout[] = trim($item);
+                }
+            }
         }
 
-        // Replace Day X
-        $parsed['plan'][$dayKey] = $updatedMeals;
-
-        // Extract dynamic intro from raw text
-        $intro = '';
-        if (preg_match('/^(.*?)(?=\nDay\s*1:)/is', $rawText, $introMatch)) {
-            $intro = trim($introMatch[1]);
+        // Find and update this day in the full plan
+        foreach ($fullPlan['plan'] as &$dayPlan) {
+            if ($dayPlan['day'] === $dayKey) {
+                $dayPlan['workout'] = $updatedDayWorkout;
+                break;
+            }
         }
 
-        // Rebuild full raw text
-        $newRawText = $this->rebuildRawText($intro, $parsed['plan'], $parsed['tips']);
-
-        $workout->workout_plan = $newRawText;
-        // dd($newRawText);
+        // Save back
+        $workout->workout_plan = $fullPlan;
         $workout->save();
 
         return redirect()->route('workout.show', $workout->id)->with('success', "Day $day updated successfully.");
