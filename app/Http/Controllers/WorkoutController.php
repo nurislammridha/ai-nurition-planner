@@ -42,12 +42,75 @@ class WorkoutController extends Controller
             // 'available_equipments' => 'nullable|array',
             'plan_duration' => 'required|string', // e.g., 7, 15, 30 days
         ]);
+        // $openaiResponse = Http::withHeaders([
+        //     'Authorization' => 'Bearer ' . env('OPENAI_API_KEY_WORKOUT'),
+        //     'Content-Type' => 'application/json',
+        // ])->post('https://api.openai.com/v1/chat/completions', [
+        //     'model' => 'gpt-4o-mini',
+        //     // 'model' => 'gpt-3.5-turbo',
+        //     'messages' => [
+        //         [
+        //             'role' => 'system',
+        //             'content' => 'You are a certified personal trainer and expert workout planner. Your plans must consider safety, training level, injuries, and available equipment. Only suggest exercises the user can safely perform with the equipment they have.'
+        //         ],
+        //         [
+        //             'role' => 'user',
+        //             'content' =>
+        //             "Please create a personalized workout plan for {$request->plan_duration} days based on the following information:\n\n" .
+        //                 "Name: {$request->name}\n" .
+        //                 "Age: {$request->age}\n" .
+        //                 "Gender: {$request->gender}\n" .
+        //                 "Height: {$request->height} cm\n" .
+        //                 "Weight: {$request->weight} kg\n" .
+        //                 "Fitness Goal: {$request->fitness_goals}\n" .
+        //                 "Training Level: {$request->training_level}\n" .
+        //                 "Preferred Training Style: {$request->preferred_training_style}\n" .
+        //                 "Training Days per Week: {$request->training_days_per_week}\n" .
+        //                 "Preferred Session Length: {$request->preferred_session_length}\n" .
+        //                 "Lifestyle Activity Level: {$request->lifestyle_activity_level}\n" .
+        //                 "Stress Level: {$request->stress_level}\n" .
+        //                 "Sleep Quality: {$request->sleep_quality}\n" .
+        //                 "Injuries/Health Conditions: " . implode(', ', $request->injuries_health_conditions ?? []) . "\n" .
+        //                 "Available Equipment: " . implode(', ', $request->available_equipments ?? []) . "\n\n" .
+        //                 "⚠️ VERY IMPORTANT:\n" .
+        //                 "- Respond ONLY with valid pure JSON format wrapped inside triple backticks (```).\n" .
+        //                 "- Do NOT include any explanation or text before or after the JSON.\n" .
+        //                 "- The JSON structure must match this format:\n\n" .
+
+        //                 "```json\n" .
+        //                 "{\n" .
+        //                 "  \"training_days_per_week\": {$request->training_days_per_week},\n" .
+        //                 "  \"plan_duration\": {$request->plan_duration},\n" .
+        //                 "  \"plan\": [\n" .
+        //                 "    {\n" .
+        //                 "      \"day\": \"Day 1\",\n" .
+        //                 "      \"workout\": [\n" .
+        //                 "        \"**Warm-Up (5 minutes):**\",\n" .
+        //                 "        \"Exercise A\",\n" .
+        //                 "        \"Exercise B\",\n" .
+        //                 "        \"...\",\n" .
+        //                 "        \"**Workout (40 minutes):**\",\n" .
+        //                 "        \"Exercise X\",\n" .
+        //                 "        \"...\",\n" .
+        //                 "        \"**Cool-Down (5 minutes):**\",\n" .
+        //                 "        \"Stretch A\",\n" .
+        //                 "        \"...\"\n" .
+        //                 "      ]\n" .
+        //                 "    },\n" .
+        //                 "    ... (Repeat for {$request->plan_duration} days)\n" .
+        //                 "  ],\n" .
+        //                 "  \"tips\": \"Final safety and motivation tips.\"\n" .
+        //                 "}\n" .
+        //                 "```"
+        //         ]
+        //     ],
+        //     'temperature' => 0.7
+        // ]);
         $openaiResponse = Http::withHeaders([
             'Authorization' => 'Bearer ' . env('OPENAI_API_KEY_WORKOUT'),
             'Content-Type' => 'application/json',
-        ])->post('https://api.openai.com/v1/chat/completions', [
+        ])->timeout(120)->post('https://api.openai.com/v1/chat/completions', [
             'model' => 'gpt-4o-mini',
-            // 'model' => 'gpt-3.5-turbo',
             'messages' => [
                 [
                     'role' => 'system',
@@ -56,7 +119,7 @@ class WorkoutController extends Controller
                 [
                     'role' => 'user',
                     'content' =>
-                    "Please create a personalized workout plan for {$request->plan_duration} days based on the following information:\n\n" .
+                    "Please create a personalized workout plan that strictly lasts for {$request->plan_duration} days based on the following user profile:\n\n" .
                         "Name: {$request->name}\n" .
                         "Age: {$request->age}\n" .
                         "Gender: {$request->gender}\n" .
@@ -66,17 +129,21 @@ class WorkoutController extends Controller
                         "Training Level: {$request->training_level}\n" .
                         "Preferred Training Style: {$request->preferred_training_style}\n" .
                         "Training Days per Week: {$request->training_days_per_week}\n" .
-                        "Preferred Session Length: {$request->preferred_session_length}\n" .
+                        "Preferred Session Length: {$request->preferred_session_length} minutes\n" .
                         "Lifestyle Activity Level: {$request->lifestyle_activity_level}\n" .
                         "Stress Level: {$request->stress_level}\n" .
                         "Sleep Quality: {$request->sleep_quality}\n" .
                         "Injuries/Health Conditions: " . implode(', ', $request->injuries_health_conditions ?? []) . "\n" .
                         "Available Equipment: " . implode(', ', $request->available_equipments ?? []) . "\n\n" .
-                        "⚠️ VERY IMPORTANT:\n" .
-                        "- Respond ONLY with valid pure JSON format wrapped inside triple backticks (```).\n" .
-                        "- Do NOT include any explanation or text before or after the JSON.\n" .
-                        "- The JSON structure must match this format:\n\n" .
 
+                        "⚠️ VERY IMPORTANT:\n" .
+                        "- Generate exactly {$request->plan_duration} daily workout entries in JSON.\n" .
+                        "- The total time per day MUST add up to exactly {$request->preferred_session_length} minutes. Divide it reasonably between warm-up, main workout, and cool-down.\n" .
+                        "- If needed, you can repeat similar day patterns to fill all {$request->plan_duration} days, but adjust slightly to avoid exact repetition.\n" .
+                        "- Respond ONLY in valid JSON format wrapped with triple backticks (```).\n" .
+                        "- Do NOT include any explanation or notes outside the JSON.\n\n" .
+
+                        "The JSON structure must match this format:\n\n" .
                         "```json\n" .
                         "{\n" .
                         "  \"training_days_per_week\": {$request->training_days_per_week},\n" .
@@ -85,19 +152,18 @@ class WorkoutController extends Controller
                         "    {\n" .
                         "      \"day\": \"Day 1\",\n" .
                         "      \"workout\": [\n" .
-                        "        \"**Warm-Up (5 minutes):**\",\n" .
+                        "        \"**Warm-Up (e.g., 10 minutes):**\",\n" .
                         "        \"Exercise A\",\n" .
-                        "        \"Exercise B\",\n" .
                         "        \"...\",\n" .
-                        "        \"**Workout (40 minutes):**\",\n" .
+                        "        \"**Workout (e.g., 45 minutes):**\",\n" .
                         "        \"Exercise X\",\n" .
                         "        \"...\",\n" .
-                        "        \"**Cool-Down (5 minutes):**\",\n" .
+                        "        \"**Cool-Down (e.g., 5 minutes):**\",\n" .
                         "        \"Stretch A\",\n" .
                         "        \"...\"\n" .
                         "      ]\n" .
                         "    },\n" .
-                        "    ... (Repeat for {$request->plan_duration} days)\n" .
+                        "    ... (up to Day {$request->plan_duration})\n" .
                         "  ],\n" .
                         "  \"tips\": \"Final safety and motivation tips.\"\n" .
                         "}\n" .
@@ -106,6 +172,7 @@ class WorkoutController extends Controller
             ],
             'temperature' => 0.7
         ]);
+
         Log::info('OpenAI API response:', $openaiResponse->json());
 
         if ($openaiResponse->successful()) {
@@ -245,12 +312,75 @@ class WorkoutController extends Controller
             'plan_duration' => 'required|string', // e.g., 7, 15, 30 days
         ]);
 
+        // $openaiResponse = Http::withHeaders([
+        //     'Authorization' => 'Bearer ' . env('OPENAI_API_KEY_WORKOUT'),
+        //     'Content-Type' => 'application/json',
+        // ])->post('https://api.openai.com/v1/chat/completions', [
+        //     'model' => 'gpt-4o-mini',
+        //     // 'model' => 'gpt-3.5-turbo',
+        //     'messages' => [
+        //         [
+        //             'role' => 'system',
+        //             'content' => 'You are a certified personal trainer and expert workout planner. Your plans must consider safety, training level, injuries, and available equipment. Only suggest exercises the user can safely perform with the equipment they have.'
+        //         ],
+        //         [
+        //             'role' => 'user',
+        //             'content' =>
+        //             "Please create a personalized workout plan for {$request->plan_duration} days based on the following information:\n\n" .
+        //                 "Name: {$request->name}\n" .
+        //                 "Age: {$request->age}\n" .
+        //                 "Gender: {$request->gender}\n" .
+        //                 "Height: {$request->height} cm\n" .
+        //                 "Weight: {$request->weight} kg\n" .
+        //                 "Fitness Goal: {$request->fitness_goals}\n" .
+        //                 "Training Level: {$request->training_level}\n" .
+        //                 "Preferred Training Style: {$request->preferred_training_style}\n" .
+        //                 "Training Days per Week: {$request->training_days_per_week}\n" .
+        //                 "Preferred Session Length: {$request->preferred_session_length}\n" .
+        //                 "Lifestyle Activity Level: {$request->lifestyle_activity_level}\n" .
+        //                 "Stress Level: {$request->stress_level}\n" .
+        //                 "Sleep Quality: {$request->sleep_quality}\n" .
+        //                 "Injuries/Health Conditions: " . implode(', ', $request->injuries_health_conditions ?? []) . "\n" .
+        //                 "Available Equipment: " . implode(', ', $request->available_equipments ?? []) . "\n\n" .
+        //                 "⚠️ VERY IMPORTANT:\n" .
+        //                 "- Respond ONLY with valid pure JSON format wrapped inside triple backticks (```).\n" .
+        //                 "- Do NOT include any explanation or text before or after the JSON.\n" .
+        //                 "- The JSON structure must match this format:\n\n" .
+
+        //                 "```json\n" .
+        //                 "{\n" .
+        //                 "  \"training_days_per_week\": {$request->training_days_per_week},\n" .
+        //                 "  \"plan_duration\": {$request->plan_duration},\n" .
+        //                 "  \"plan\": [\n" .
+        //                 "    {\n" .
+        //                 "      \"day\": \"Day 1\",\n" .
+        //                 "      \"workout\": [\n" .
+        //                 "        \"**Warm-Up (5 minutes):**\",\n" .
+        //                 "        \"Exercise A\",\n" .
+        //                 "        \"Exercise B\",\n" .
+        //                 "        \"...\",\n" .
+        //                 "        \"**Workout (40 minutes):**\",\n" .
+        //                 "        \"Exercise X\",\n" .
+        //                 "        \"...\",\n" .
+        //                 "        \"**Cool-Down (5 minutes):**\",\n" .
+        //                 "        \"Stretch A\",\n" .
+        //                 "        \"...\"\n" .
+        //                 "      ]\n" .
+        //                 "    },\n" .
+        //                 "    ... (Repeat for {$request->plan_duration} days)\n" .
+        //                 "  ],\n" .
+        //                 "  \"tips\": \"Final safety and motivation tips.\"\n" .
+        //                 "}\n" .
+        //                 "```"
+        //         ]
+        //     ],
+        //     'temperature' => 0.7
+        // ]);
         $openaiResponse = Http::withHeaders([
             'Authorization' => 'Bearer ' . env('OPENAI_API_KEY_WORKOUT'),
             'Content-Type' => 'application/json',
-        ])->post('https://api.openai.com/v1/chat/completions', [
+        ])->timeout(120)->post('https://api.openai.com/v1/chat/completions', [
             'model' => 'gpt-4o-mini',
-            // 'model' => 'gpt-3.5-turbo',
             'messages' => [
                 [
                     'role' => 'system',
@@ -259,7 +389,7 @@ class WorkoutController extends Controller
                 [
                     'role' => 'user',
                     'content' =>
-                    "Please create a personalized workout plan for {$request->plan_duration} days based on the following information:\n\n" .
+                    "Please create a personalized workout plan that strictly lasts for {$request->plan_duration} days based on the following user profile:\n\n" .
                         "Name: {$request->name}\n" .
                         "Age: {$request->age}\n" .
                         "Gender: {$request->gender}\n" .
@@ -269,17 +399,21 @@ class WorkoutController extends Controller
                         "Training Level: {$request->training_level}\n" .
                         "Preferred Training Style: {$request->preferred_training_style}\n" .
                         "Training Days per Week: {$request->training_days_per_week}\n" .
-                        "Preferred Session Length: {$request->preferred_session_length}\n" .
+                        "Preferred Session Length: {$request->preferred_session_length} minutes\n" .
                         "Lifestyle Activity Level: {$request->lifestyle_activity_level}\n" .
                         "Stress Level: {$request->stress_level}\n" .
                         "Sleep Quality: {$request->sleep_quality}\n" .
                         "Injuries/Health Conditions: " . implode(', ', $request->injuries_health_conditions ?? []) . "\n" .
                         "Available Equipment: " . implode(', ', $request->available_equipments ?? []) . "\n\n" .
-                        "⚠️ VERY IMPORTANT:\n" .
-                        "- Respond ONLY with valid pure JSON format wrapped inside triple backticks (```).\n" .
-                        "- Do NOT include any explanation or text before or after the JSON.\n" .
-                        "- The JSON structure must match this format:\n\n" .
 
+                        "⚠️ VERY IMPORTANT:\n" .
+                        "- Generate exactly {$request->plan_duration} daily workout entries in JSON.\n" .
+                        "- The total time per day MUST add up to exactly {$request->preferred_session_length} minutes. Divide it reasonably between warm-up, main workout, and cool-down.\n" .
+                        "- If needed, you can repeat similar day patterns to fill all {$request->plan_duration} days, but adjust slightly to avoid exact repetition.\n" .
+                        "- Respond ONLY in valid JSON format wrapped with triple backticks (```).\n" .
+                        "- Do NOT include any explanation or notes outside the JSON.\n\n" .
+
+                        "The JSON structure must match this format:\n\n" .
                         "```json\n" .
                         "{\n" .
                         "  \"training_days_per_week\": {$request->training_days_per_week},\n" .
@@ -288,19 +422,18 @@ class WorkoutController extends Controller
                         "    {\n" .
                         "      \"day\": \"Day 1\",\n" .
                         "      \"workout\": [\n" .
-                        "        \"**Warm-Up (5 minutes):**\",\n" .
+                        "        \"**Warm-Up (e.g., 10 minutes):**\",\n" .
                         "        \"Exercise A\",\n" .
-                        "        \"Exercise B\",\n" .
                         "        \"...\",\n" .
-                        "        \"**Workout (40 minutes):**\",\n" .
+                        "        \"**Workout (e.g., 45 minutes):**\",\n" .
                         "        \"Exercise X\",\n" .
                         "        \"...\",\n" .
-                        "        \"**Cool-Down (5 minutes):**\",\n" .
+                        "        \"**Cool-Down (e.g., 5 minutes):**\",\n" .
                         "        \"Stretch A\",\n" .
                         "        \"...\"\n" .
                         "      ]\n" .
                         "    },\n" .
-                        "    ... (Repeat for {$request->plan_duration} days)\n" .
+                        "    ... (up to Day {$request->plan_duration})\n" .
                         "  ],\n" .
                         "  \"tips\": \"Final safety and motivation tips.\"\n" .
                         "}\n" .
