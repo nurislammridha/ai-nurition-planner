@@ -4,7 +4,7 @@
 <div class="container mx-auto mt-5 p-6  shadow-md rounded-lg max-w-3xl">
     <h2 class="text-center text-xl font-semibold">Create Workout Plan</h2>
     <hr class="my-4">
-
+@include('partials.messages')
     <form action="{{ route('workout.store') }}" method="POST">
         @csrf
         <!-- Name & Email -->

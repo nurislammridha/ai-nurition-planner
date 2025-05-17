@@ -10,9 +10,12 @@
       </svg>
       Create Plan
   </a>
+   @if (session('success'))
+<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-md mt-2">{{ session('success') }}</div>
+@endif
 </div>
 
-
+{{-- @include('partials.messages') --}}
 <div class="container mx-auto mt-4 flex gap-4">
   <input type="text" id="searchInput" placeholder="🔍 Search by name..." class="w-1/2 p-2 border rounded"
       onkeyup="filterTable()">
@@ -86,8 +89,18 @@
 
         </tr>
         @endforeach
+
+        @if(!count($workouts))
+            <tr>
+                <td rowspan="5">
+                    No workouts added yet. Please <a href="">Create New</a>
+                </td>
+            </tr>
+        @endif
       </tbody>
   </table>
+
+  {{-- {{ $workouts->links() }} --}}
 </div>
 @endsection
    

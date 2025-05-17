@@ -4,7 +4,7 @@
 <div class="container mx-auto mt-5 p-6  shadow-md rounded-lg max-w-3xl">
     <h2 class="text-center text-xl font-semibold">Create Workout Plan</h2>
     <hr class="my-4">
-
+@include('partials.messages')
     <form action="{{ route('workout.update',$workout) }}" method="POST">
         @csrf
         @method('PUT')
@@ -168,7 +168,7 @@
                     <option value="Anemia" {{ isSelected('Anemia', $selectedConditions) }}>Anemia</option>
                     <option value="Asthma" {{ isSelected('Asthma', $selectedConditions) }}>Asthma</option>
                     <option value="Diabetic" {{ isSelected('Diabetic', $selectedConditions) }}>Diabetic</option>
-                    <option value="High Cholesterol" {{ isSelected('"High Cholesterol', $selectedConditions) }}>High Cholesterol</option>
+                    <option value="High Cholesterol" {{ isSelected('High Cholesterol', $selectedConditions) }}>High Cholesterol</option>
                     <option value="Hypertension" {{ isSelected('Hypertension', $selectedConditions) }}>Hypertension</option>
                     <option value="Insulin Resistant" {{ isSelected('Insulin Resistant', $selectedConditions) }}>Insulin Resistant</option>
                     <option value="Kidney Disease" {{ isSelected('Kidney Disease', $selectedConditions) }}>Kidney Disease</option>
