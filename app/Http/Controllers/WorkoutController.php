@@ -82,8 +82,7 @@ class WorkoutController extends Controller
         try {
             $this->increaseTimeoutAndRequest();
             $plan = $this->workoutService->generatePlan($request);
-            // @dd($workout->injuries_health_conditions);
-            // @dd($this->openAi->parseJson($plan));
+
             $workout->update([
                 'name' => $request->name,
                 'age' => $request->age,
